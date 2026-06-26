@@ -7,11 +7,7 @@ const latestVersionUrl = "https://raw.githubusercontent.com/basketikun/infinite-
 const latestChangelogUrl = "https://raw.githubusercontent.com/basketikun/infinite-canvas/main/CHANGELOG.md";
 
 function readLocalReleases(): ReleaseInfo[] {
-    try {
-        return JSON.parse(process.env.NEXT_PUBLIC_APP_RELEASES || "[]");
-    } catch {
-        return [];
-    }
+    return __APP_RELEASES__ || [];
 }
 
 function toVersionParts(version: string) {

@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { App, Button, Image, Tag } from "antd";
+import { useNavigate } from "react-router-dom";
 
 import { fetchPrompts, type Prompt } from "@/services/api/prompts";
 import { navigationTools } from "@/constant/navigation-tools";
@@ -23,6 +24,7 @@ function Highlighter({ action, color, children }: { action: "highlight" | "under
 
 export default function IndexPage() {
     const { message } = App.useApp();
+    const navigate = useNavigate();
     const [primaryTool] = navigationTools;
     const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
     const [previewIndex, setPreviewIndex] = useState(0);
@@ -54,10 +56,10 @@ export default function IndexPage() {
                         ，让创作从单次生成变成连续推演。
                     </p>
                     <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                        <Button type="primary" size="large" href={`/${primaryTool.slug}`} icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                        <Button type="primary" size="large" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                             开始使用
                         </Button>
-                        <Button size="large" href="/canvas">
+                        <Button size="large" onClick={() => navigate("/canvas")}>
                             打开画布
                         </Button>
                     </div>
@@ -70,7 +72,7 @@ export default function IndexPage() {
                             <h2 className="text-3xl font-semibold text-stone-950 dark:text-stone-100">沉淀每一次好结果</h2>
                             <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">收藏稳定出图的提示词、参考风格和结果图片，让下一次创作从已有经验开始。</p>
                         </div>
-                        <Button type="link" href="/prompts" className="justify-self-center md:justify-self-end" icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                        <Button type="link" onClick={() => navigate("/prompts")} className="justify-self-center md:justify-self-end" icon={<ArrowRight className="size-4" />} iconPlacement="end">
                             查看提示词库
                         </Button>
                     </div>
