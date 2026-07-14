@@ -9,7 +9,6 @@ import { UserStatusActions } from "@/components/layout/user-status-actions";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { useConfigStore } from "@/stores/use-config-store";
 
 export function AppTopNav() {
     const { pathname } = useLocation();
@@ -28,7 +27,7 @@ export function AppTopNav() {
     useEffect(() => {
         if (autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
         autoConnectRef.current = true;
-        connectAgent();
+        connectAgent({ silent: true });
     }, [agentConnected, agentEnabled, agentToken, connectAgent]);
 
     return (
@@ -82,7 +81,6 @@ export function AppTopNav() {
                         </div>
 
                         <div className="my-auto flex h-9 min-w-0 items-center justify-end gap-2 justify-self-end whitespace-nowrap">
-                            <CodexStatusButton />
                             <Tooltip title={panelOpen ? "收起 Agent" : "打开 Agent"}>
                                 <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" icon={<Bot className="size-4" />} onClick={togglePanel} aria-label="打开 Agent" />
                             </Tooltip>
@@ -95,23 +93,5 @@ export function AppTopNav() {
             <MobileNavDrawer open={mobileNavOpen} activeToolSlug={activeToolSlug} onClose={() => setMobileNavOpen(false)} />
             <AppConfigModal />
         </>
-    );
-}
-
-function CodexStatusButton() {
-    const connected = useAgentStore((state) => state.connected);
-    const enabled = useAgentStore((state) => state.enabled);
-    const activity = useAgentStore((state) => state.activity);
-    const connectError = useAgentStore((state) => state.connectError);
-    const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
-    const color = connectError ? "#dc2626" : connected ? "#16a34a" : enabled ? "#d97706" : "currentColor";
-    const title = connectError || (connected ? activity || "Codex 已连接" : enabled ? "Codex 连接中" : "Codex 未连接");
-    return (
-        <Tooltip title={title}>
-            <Button type="text" shape="circle" className="relative !h-8 !w-8 !min-w-8" onClick={() => openConfigDialog(false, "codex")} aria-label="Codex 连接状态">
-                <span className="mx-auto block size-4" style={{ background: color, WebkitMask: "url(/icons/openai.svg) center / contain no-repeat", mask: "url(/icons/openai.svg) center / contain no-repeat" }} />
-                <span className="absolute right-1 top-1 size-2 rounded-full border border-background" style={{ background: color }} />
-            </Button>
-        </Tooltip>
     );
 }

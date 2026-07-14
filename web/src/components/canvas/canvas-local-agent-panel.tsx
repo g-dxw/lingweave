@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { App, Button, Input, Segmented, Tooltip } from "antd";
 import copyToClipboard from "copy-to-clipboard";
@@ -103,7 +103,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         source.addEventListener("hello", () => {
             errorLoggedRef.current = false;
             connectedRef.current = true;
-            setAgentState({ connected: true, activity: "已连接", connectError: "", messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
+            setAgentState({ connected: true, activity: "已连接", connectError: "", silentConnect: false, messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
             if (!headless) message.success("本地 Agent 已连接");
             void postState(endpoint, token, clientId, canvasContextRef.current?.snapshot || null);
         });
@@ -131,14 +131,15 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         });
         source.onerror = () => {
             const wasConnected = connectedRef.current;
+            const silent = useAgentStore.getState().silentConnect && !wasConnected;
             const text = wasConnected ? "本地 Agent 连接失败或已断开" : "连接失败，请检查地址和 token";
             if (!errorLoggedRef.current || wasConnected) {
                 addEventLog(wasConnected ? "连接断开" : "连接失败", { endpoint, error: text });
-                if (!headless) message.error(text);
+                if (!headless && !silent) message.error(text);
             }
             errorLoggedRef.current = true;
             connectedRef.current = false;
-            clearAgentSession({ activity: wasConnected ? "连接断开" : "连接失败", connected: false, connectError: text });
+            clearAgentSession({ activity: wasConnected ? "连接断开" : "连接失败", connected: false, connectError: silent ? "" : text, silentConnect: false });
             if (!wasConnected) {
                 source.close();
                 setAgentState({ enabled: false });
@@ -327,7 +328,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         if (connected) void postState(endpoint, token, clientIdRef.current, restored);
     };
 
-    const toggleAgentConnection = async () => {
+    const toggleAgentConnection = async ({ silent = false }: { silent?: boolean } = {}) => {
         if (enabled) {
             clearAgentSession({ enabled: false, connected: false, activity: "离线", connectError: "" });
             return;
@@ -339,14 +340,18 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         const nextToken = (urlToken || token.trim() || discovered?.token || "").trim();
         if (!nextEndpoint) {
             const text = "请填写本地 Agent 地址";
-            setAgentState({ connectError: text });
-            if (!headless) message.warning(text);
+            if (!silent) {
+                setAgentState({ connectError: text });
+                if (!headless) message.warning(text);
+            }
             return;
         }
         if (!nextToken) {
             const text = "没有发现本地 Agent，请先在 Codex 使用插件或手动启动 Canvas Agent";
-            setAgentState({ connectError: text });
-            if (!headless) message.warning(text);
+            if (!silent) {
+                setAgentState({ connectError: text });
+                if (!headless) message.warning(text);
+            }
             return;
         }
         try {
@@ -354,12 +359,14 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("invalid protocol");
         } catch {
             const text = "本地 Agent 地址格式不正确";
-            setAgentState({ connectError: text });
-            if (!headless) message.warning(text);
+            if (!silent) {
+                setAgentState({ connectError: text });
+                if (!headless) message.warning(text);
+            }
             return;
         }
         errorLoggedRef.current = false;
-        setAgentState({ url: nextEndpoint, token: nextToken, enabled: true, connected: false, activity: "连接中", connectError: "", activeTab: "setup" });
+        setAgentState({ url: nextEndpoint, token: nextToken, enabled: true, connected: false, silentConnect: silent, activity: "连接中", connectError: "", activeTab: "setup" });
     };
 
     useEffect(() => {
@@ -369,7 +376,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
     useEffect(() => {
         if (!autoConnect || autoConnectRef.current || enabled || connected) return;
         autoConnectRef.current = true;
-        void toggleAgentConnection();
+        void toggleAgentConnection({ silent: true });
     }, [autoConnect, connected, enabled]);
 
     function clearAgentSession(patch: Parameters<typeof setAgentState>[0] = {}) {
@@ -630,6 +637,26 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
         copyToClipboard(command);
         message.success("命令已复制");
     };
+    const codexPluginReminder = (
+        <div className="rounded-lg border px-3 py-2.5 text-xs leading-5" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
+            <div className="font-medium" style={{ color: theme.node.text }}>Codex 插件提醒</div>
+            <div className="mt-1">只有安装 Codex 插件或手动添加 MCP 后，工具列表才会进入 Codex 上下文并增加 token 消耗；仅运行 `npx -y @basketikun/canvas-agent` 启动本地 Agent 不会安装 MCP。</div>
+            <div className="mt-2 grid gap-1.5">
+                {[
+                    ["移除插件", AGENT_PLUGIN_REMOVE_COMMAND],
+                    ["移除手动 MCP", AGENT_MCP_REMOVE_COMMAND],
+                ].map(([label, command]) => (
+                    <div key={command} className="flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
+                        <span className="shrink-0 text-[11px]" style={{ color: theme.node.muted }}>{label}</span>
+                        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
+                        <Tooltip title="复制命令">
+                            <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
+                        </Tooltip>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
     return (
         <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
@@ -640,42 +667,26 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
                     </div>
                 </div>
                 <div className="space-y-2">
-                    {AGENT_CONNECT_STEPS.map((step) => {
+                    {AGENT_CONNECT_STEPS.map((step, index) => {
                         const command = "command" in step ? step.command : "";
                         return (
-                            <div key={step.title} className="rounded-lg px-3 py-2.5">
-                                <div className="text-sm font-medium leading-5">{step.title}</div>
-                                <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>{step.text}</div>
-                                {command ? (
-                                    <div className="mt-2 flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
-                                        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
-                                        <Tooltip title="复制命令">
-                                            <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
-                                        </Tooltip>
-                                    </div>
-                                ) : null}
-                            </div>
+                            <Fragment key={step.title}>
+                                <div className="rounded-lg px-3 py-2.5">
+                                    <div className="text-sm font-medium leading-5">{step.title}</div>
+                                    <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>{step.text}</div>
+                                    {command ? (
+                                        <div className="mt-2 flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
+                                            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
+                                            <Tooltip title="复制命令">
+                                                <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
+                                            </Tooltip>
+                                        </div>
+                                    ) : null}
+                                </div>
+                                {index === 0 ? codexPluginReminder : null}
+                            </Fragment>
                         );
                     })}
-                </div>
-
-                <div className="rounded-lg border px-3 py-2.5 text-xs leading-5" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
-                    <div className="font-medium" style={{ color: theme.node.text }}>Codex 插件提醒</div>
-                    <div className="mt-1">只有安装 Codex 插件或手动添加 MCP 后，工具列表才会进入 Codex 上下文并增加 token 消耗；仅运行 `npx -y @basketikun/canvas-agent` 启动本地 Agent 不会安装 MCP。</div>
-                    <div className="mt-2 grid gap-1.5">
-                        {[
-                            ["移除插件", AGENT_PLUGIN_REMOVE_COMMAND],
-                            ["移除手动 MCP", AGENT_MCP_REMOVE_COMMAND],
-                        ].map(([label, command]) => (
-                            <div key={command} className="flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
-                                <span className="shrink-0 text-[11px]" style={{ color: theme.node.muted }}>{label}</span>
-                                <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
-                                <Tooltip title="复制命令">
-                                    <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
-                                </Tooltip>
-                            </div>
-                        ))}
-                    </div>
                 </div>
                 <div className="rounded-lg border p-3" style={{ borderColor: theme.node.stroke }}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
