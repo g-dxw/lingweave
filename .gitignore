@@ -9,6 +9,7 @@ data/
 .DS_Store
 .idea
 web/dist
+**/dist
 web/public/docs/
 web/public/_next/
 web/public/docs-search
@@ -16,6 +17,7 @@ web/public/api/search
 web/public/llms.mdx/
 web/public/github.svg
 web/public/qq.svg
+web/public/plugins
 web/public/prompt-library/
 web/public/prompt-library.tmp/
 web/public/prompt-library.download/
