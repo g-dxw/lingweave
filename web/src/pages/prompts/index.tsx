@@ -3,6 +3,7 @@ import { type UIEvent, useEffect, useState } from "react";
 import { App, Button, Empty, Input, Spin, Tag } from "antd";
 
 import { PromptCard } from "@/components/prompts/prompt-card";
+import { PromptTagFilter } from "@/components/prompts/prompt-tag-filter";
 import { usePromptList } from "@/components/prompts/use-prompt-list";
 import { PromptDetailDialog } from "./components/prompt-detail-dialog";
 import { useCopyText } from "@/hooks/use-copy-text";
@@ -26,13 +27,8 @@ export default function PromptsPage() {
         }
     }, [message, query.error, query.isError]);
 
-    const toggleTag = (tag: string) => {
-        if (tag === ALL_PROMPTS_OPTION) return setSelectedTags([]);
-        setSelectedTags((items) => (items.includes(tag) ? items.filter((item) => item !== tag) : [...items, tag]));
-    };
-
     const savePromptAsset = (item: Prompt) => {
-        addAsset({ kind: "text", title: item.title, coverUrl: item.coverUrl, tags: item.tags, source: item.category, data: { content: item.prompt }, metadata: { source: "prompt-library", promptId: item.id, githubUrl: item.githubUrl } });
+        addAsset({ kind: "text", title: item.title, coverUrl: item.coverUrl, tags: item.tags, source: item.source, data: { content: item.prompt }, metadata: { source: "prompt-library", promptId: item.id, githubUrl: item.githubUrl } });
         message.success("已加入我的素材");
     };
 
@@ -77,18 +73,7 @@ export default function PromptsPage() {
                                 </div>
                                 <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
                                     <div className="pt-2 text-xs font-medium text-stone-500 dark:text-stone-400">标签</div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {promptTags.map((tag) => (
-                                            <Tag.CheckableTag
-                                                key={tag}
-                                                checked={tag === ALL_PROMPTS_OPTION ? selectedTags.length === 0 : selectedTags.includes(tag)}
-                                                className={cn("prompt-filter-tag", (tag === ALL_PROMPTS_OPTION ? selectedTags.length === 0 : selectedTags.includes(tag)) && "is-active")}
-                                                onChange={() => toggleTag(tag)}
-                                            >
-                                                {tag}
-                                            </Tag.CheckableTag>
-                                        ))}
-                                    </div>
+                                    <PromptTagFilter options={promptTags} selected={selectedTags} onChange={setSelectedTags} />
                                 </div>
                             </div>
                         </>

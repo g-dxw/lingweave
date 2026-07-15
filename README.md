@@ -1,144 +1,106 @@
 <p align="center">
-  <img src="web/public/logo.svg" width="96" alt="infinite-canvas logo">
+  <img src="web/public/logo.svg" width="88" alt="LingWeave Logo">
 </p>
 
-<h1 align="center">无限画布 (infinite-canvas)</h1>
+<h1 align="center">LingWeave（灵织）</h1>
 
 <p align="center">
-  <a href="https://linux.do/"><img src="https://img.shields.io/badge/Linux.do-Community-2b6de8?style=flat-square" alt="Linux.do"></a>
-  <a href="https://render.com/deploy?repo=https://github.com/basketikun/infinite-canvas"><img src="https://img.shields.io/badge/Render-Deploy-46e3b7?style=flat-square&logo=render&logoColor=111111" alt="Deploy to Render"></a>
-  <a href="https://github.com/basketikun/infinite-canvas"><img src="https://img.shields.io/github/stars/basketikun/infinite-canvas?style=flat-square&logo=github" alt="GitHub stars"></a>
-  <a href="https://github.com/basketikun/infinite-canvas/tags"><img src="https://img.shields.io/github/v/tag/basketikun/infinite-canvas?style=flat-square&label=version" alt="Version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-f97316?style=flat-square" alt="License"></a>
-  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white" alt="Vite"></a>
-  <a href="https://reactrouter.com/"><img src="https://img.shields.io/badge/React_Router-7-ca4245?style=flat-square&logo=reactrouter&logoColor=white" alt="React Router"></a>
+  把提示词、参考素材、模型配置和生成结果连接在同一张画布上的 AI 视觉创作工作台。
 </p>
 
 <p align="center">
-  <a href="https://trendshift.io/repositories/50077?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-50077" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/50077/daily?language=TypeScript" alt="basketikun%2Finfinite-canvas | Trendshift" width="250" height="55"></a>
+  <a href="https://github.com/g-dxw/lingweave"><img src="https://img.shields.io/github/stars/g-dxw/lingweave?style=flat-square&logo=github" alt="GitHub Stars"></a>
+  <a href="https://github.com/g-dxw/lingweave/tags"><img src="https://img.shields.io/github/v/tag/g-dxw/lingweave?style=flat-square&label=version" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-f97316?style=flat-square" alt="AGPL-3.0 License"></a>
+  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-7-646cff?style=flat-square&logo=vite&logoColor=white" alt="Vite 7"></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-149eca?style=flat-square&logo=react&logoColor=white" alt="React 19"></a>
 </p>
 
 <p align="center">
-  <a href="docs/content/docs/overview/quick-start.mdx">快速开始</a> · <a href="docs/content/docs/overview/features.mdx">功能介绍</a> · <a href="docs/content/docs/overview/render.mdx">Render 部署</a> · <a href="docs/content/docs/overview/docker.mdx">Docker 部署</a> · <a href="docs/content/docs/canvas/canvas-node-manual.mdx">画布节点操作手册</a> · <a href="docs/content/docs/canvas/canvas-shortcuts.mdx">画布快捷键</a> · <a href="CLA.md">贡献者协议</a> · <a href="SECURITY.md">漏洞提交</a> · <a href="docs/content/docs/progress/todo.mdx">待办事项</a> · <a href="canvas-agent/README.md">本地 Canvas Agent</a> · <a href="plugins/infinite-canvas">Codex app 插件</a>
+  <a href="docs/content/docs/overview/quick-start.mdx">快速开始</a> ·
+  <a href="docs/content/docs/overview/features.mdx">功能介绍</a> ·
+  <a href="docs/content/docs/canvas/canvas-node-manual.mdx">画布手册</a> ·
+  <a href="docs/content/docs/overview/codex-app-plugin.mdx">Codex 插件</a> ·
+  <a href="docs/index.md">文档索引</a>
 </p>
 
-无限画布是一款面向图片创作的开源工作台。它把画布编排、AI 图片生成、参考图编辑、对话助手、提示词库和素材沉淀放在同一个界面里，适合用来探索视觉方案并连续迭代图片结果。
+## 项目介绍
+
+LingWeave（灵织）是一款面向个人创作者的 AI 无限画布，适合进行图像探索、连续场景创作和多模态内容编排。你可以把提示词、图片、视频、音频和生成配置组织为节点，用连线表达引用关系，并从任意结果继续生成新的分支。
+
+项目以 Web 前端为主体，没有业务后端。AI 请求由浏览器访问当前环境配置的 Niffler 或用户自己的兼容接口，画布、素材和生成记录默认保存在当前浏览器本地。
 
 > [!CAUTION]
-> 项目目前处于开发阶段，不保证历史数据兼容。各种本地存储格式都可能直接调整，欢迎关注后续更新，当前更适合个人/本地部署，不建议直接公网多人共用。
->
-> 如果你需要稳定维护自己的分支，建议自行 fork 后独立开发。二次开发与 PR 请保留原作者信息和前端页面标识。
+> 项目仍处于开发阶段，不保证本地数据结构向后兼容，当前更适合个人使用或可信环境部署，不建议直接作为公网多人服务。
+
+## 项目来源
+
+LingWeave 最初基于 [basketikun/infinite-canvas](https://github.com/basketikun/infinite-canvas) 开发，经过大规模功能与架构调整后由本仓库独立维护。项目保留原始提交历史，并继续遵循 AGPL-3.0 开源协议。感谢原项目作者及所有贡献者。
 
 ## 核心功能
 
-- 无限画布：多画布项目、节点拖拽缩放、连线、小地图、撤销重做、导入导出。
-- AI 创作：浏览器前台直连你配置的 OpenAI 兼容接口，支持文生图、图生图、参考图编辑、文本问答、音频和视频生成；Seedance 2.0 可通过火山方舟 Agent Plan 接入。
-- 画布助手：围绕选中节点和上游节点对话、生图，并把结果插回画布。
-- 本地 Agent：通过本机 Canvas Agent 连接 Codex / Claude Code，让 Agent 通过 MCP 操作当前画布；
-- Codex App 插件：提供 Codex app 插件，安装后会自动注册 MCP 并尝试拉起本地 Agent。
-- 提示词库：浏览器前端直连多个 GitHub 开源项目，并缓存到 IndexedDB。
+- **节点式无限画布**：管理多画布项目，支持文本、图片、视频、音频、生成配置和分组节点，以及连线、缩放、小地图、撤销重做和导入导出。
+- **连续内容生成**：将提示词和参考素材连接到生成配置，支持图片、文本、视频和音频生成；结果可以继续作为下一次生成的输入。
+- **Niffler 接入**：配置了 Niffler 的环境可登录账号并读取 API Key 和模型；未配置的静态部署只保留用户自己的 OpenAI / Gemini 兼容渠道。
+- **本地提示词库**：通过同步脚本将多个开源提示词仓库及封面保存到项目静态目录，前端运行时不再依赖第三方图片地址。
+- **素材与数据管理**：提示词、参考图和生成结果可以加入“我的素材”；画布和素材默认保存在浏览器本地，并支持导入导出和可选 WebDAV 同步。
+- **Codex 协作**：通过本地 Canvas Agent 和 Codex App 插件读取画布、创建节点、连接流程并触发生成，手动画布功能不依赖 Codex。
 
-完整功能说明见 [功能介绍](docs/content/docs/overview/features.mdx)。
-
-如果你在为担心没有合适的生图API来发愁，可以查看该免费生图项目：[chatgpt2api](https://github.com/basketikun/chatgpt2api)
+完整能力和当前限制见[功能介绍](docs/content/docs/overview/features.mdx)。
 
 ## 快速开始
 
-AI API Key、Base URL、画布、素材和生成记录默认保存在浏览器本地。
-
 ### 本地开发
 
+需要 Node.js 20.19 或更高版本。
+
 ```bash
-git clone git@github.com:basketikun/infinite-canvas.git
-cd infinite-canvas
-cd web
-bun install
-bun run dev
+git clone https://github.com/g-dxw/lingweave.git
+cd lingweave/web
+npm install
+npm run dev
 ```
+
+启动后访问 [http://localhost:3000](http://localhost:3000)。
+
+本地开发默认将 `/api` 和 `/v1` 代理到 `https://niffler.org`；需要切换调试服务时，在 `web/.env.local` 设置 `NIFFLER_PROXY_TARGET`。
+
+首次启动会优先下载当前版本 GitHub Release 中的提示词库资源包；资源包不可用时会自动从上游同步。如需主动更新本地提示词库，在 `web/` 目录执行：
+
+```bash
+npm run sync:prompts
+```
+
+再次同步会复用已下载的封面。提示词库本地目录不会提交到 Git，版本标签发布时会自动生成对应资源包。
 
 ### Docker 运行
 
+`docker-compose.yml` 默认使用发布到 GitHub Container Registry 的镜像：
+
 ```bash
-git clone git@github.com:basketikun/infinite-canvas.git
-cd infinite-canvas
+git clone https://github.com/g-dxw/lingweave.git
+cd lingweave
 docker compose up -d
 ```
 
-运行后默认端口3000，可访问 `http://localhost:3000`。
+运行后访问 [http://localhost:3000](http://localhost:3000)。源码构建和其他部署方式见 [Docker 部署](docs/content/docs/overview/docker.mdx) 与 [Render 部署](docs/content/docs/overview/render.mdx)。
 
-首次打开后进入右上角配置，填入自己的 OpenAI 兼容 `Base URL` 和 `API Key`。
+### 首次使用
 
-## New API 自动配置
+1. 打开“配置”；当前部署启用了 Niffler 时可登录并选择账号 API Key 和默认模型，也可以直接填写自己的 Base URL 和 API Key。
+2. 进入“快速上手”或新建空白画布，添加文本节点并填写提示词。
+3. 点击文本节点上的“生图”，确认生成配置后开始生成。
+4. 将满意结果继续连接到下一组配置，或保存到“我的素材”。
 
-如果使用 New API，可在 `系统设置 -> 聊天方式 -> 添加聊天设置` 中填入：
+未登录时，API Key 保存在浏览器本地；登录 Niffler 后，账号 Key 只保留在当前页面运行内存。生产构建通过 `VITE_NIFFLER_ORIGIN` 决定是否启用 Niffler，GitHub Pages 默认关闭。
 
-```text
-https://canvas.best?apiKey={key}&baseUrl={address}
-```
+## 文档
 
-跳转后会自动打开配置弹窗并填入 API Key 和 Base URL。
-如果自己部署了，可以把 `https://canvas.best` 替换成你部署的地址。
-
-## 效果展示
-
-<table width="100%">
-  <tr>
-    <td width="50%"><img src="https://i.ibb.co/TDFvGWDT/image.png" alt="image" border="0"></td>
-    <td width="50%"><img src="https://i.ibb.co/zVwJq3YS/image.png" alt="image" border="0"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="https://i.ibb.co/PvY3qhhK/image.png" alt="image" border="0"></td>
-    <td width="50%"><img src="https://i.ibb.co/7D04LwN/image.png" alt="image" border="0"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="https://i.ibb.co/bj30FtS5/5.png" alt="5" border="0"></td>
-    <td width="50%"><img src="https://i.ibb.co/hxRvjw51/image.png" alt="image" border="0"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="https://i.ibb.co/jkWsF8q1/image.png" alt="image" border="0"></td>
-    <td width="50%"><img src="https://i.ibb.co/XrnfXHx7/image.png" alt="image" border="0"></td>
-  </tr>
-</table>
-
-## 联系方式
-
-项目定制二次开发需求 / 生图 API 需求可联系。
-
-邮箱：1844025705@qq.com · QQ：1844025705
-
-## 赞助支持
-
-<div align="center">
-
-如果这个项目对你有帮助，欢迎通过爱发电赞助支持，你的每一份鼓励都是持续更新的动力！
-
-<br>
-
-<a href="https://ifdian.net/a/basketikun">
-  <img src="https://img.shields.io/badge/%E7%88%B1%E5%8F%91%E7%94%B5-%E8%B5%9E%E5%8A%A9%E4%BD%9C%E8%80%85-946ce6?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyMS4zNWwtMS40NS0xLjMyQzUuNCAxNS4zNiAyIDEyLjI4IDIgOC41IDIgNS40MiA0LjQyIDMgNy41IDNjMS43NCAwIDMuNDEuODEgNC41IDIuMDlDMTMuMDkgMy44MSAxNC43NiAzIDE2LjUgMyAxOS41OCAzIDIyIDUuNDIgMjIgOC41YzAgMy43OC0zLjQgNi44Ni04LjU1IDExLjU0TDEyIDIxLjM1eiIvPjwvc3ZnPg==&logoColor=white" alt="爱发电赞助" />
-</a>
-
-<br>
-<br>
-
-</div>
-
-## 社区支持
-
-学 AI，上 L 站：[LinuxDO](https://linux.do/)
-
-点击链接加入群聊【AI开源交流】：https://qm.qq.com/q/DFnKzZ807u
-
-## 开源协议
-
-本项目使用 GNU Affero General Public License v3.0，见 [LICENSE](LICENSE)。
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=basketikun%2Finfinite-canvas&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=basketikun/infinite-canvas&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=basketikun/infinite-canvas&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=basketikun/infinite-canvas&type=date&legend=top-left" />
- </picture>
-</a>
+- [快速开始](docs/content/docs/overview/quick-start.mdx)
+- [功能介绍](docs/content/docs/overview/features.mdx)
+- [画布节点操作手册](docs/content/docs/canvas/canvas-node-manual.mdx)
+- [画布快捷键](docs/content/docs/canvas/canvas-shortcuts.mdx)
+- [本地开发](docs/content/docs/development/local-development.mdx)
+- [Codex App 插件](docs/content/docs/overview/codex-app-plugin.mdx)
+- [本地 Codex 连接画布原理](docs/content/docs/overview/local-codex-canvas.mdx)
+- [完整文档索引](docs/index.md)

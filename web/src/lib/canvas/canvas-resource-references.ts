@@ -27,8 +27,6 @@ export function buildNodeMentionReferences(node: CanvasNodeData, nodes: CanvasNo
 }
 
 export function getMentionResourceNodes(nodeId: string, nodes: CanvasNodeData[], connections: CanvasConnection[]) {
-    const configInputs = getConnectedConfigResourceNodes(nodeId, nodes, connections);
-    if (configInputs.length) return configInputs;
     const ownInputs = getContextResourceNodes(nodeId, nodes, connections);
     if (ownInputs.length) return ownInputs;
     const node = nodes.find((item) => item.id === nodeId);
@@ -36,11 +34,7 @@ export function getMentionResourceNodes(nodeId: string, nodes: CanvasNodeData[],
 }
 
 export function getGenerationResourceNodes(nodeId: string, nodes: CanvasNodeData[], connections: CanvasConnection[]) {
-    const configInputs = getConnectedConfigResourceNodes(nodeId, nodes, connections);
-    if (configInputs.length) return configInputs;
-    const ownInputs = getContextResourceNodes(nodeId, nodes, connections);
-    if (ownInputs.length) return ownInputs;
-    return [];
+    return getContextResourceNodes(nodeId, nodes, connections);
 }
 
 function getContextResourceNodes(nodeId: string, nodes: CanvasNodeData[], connections: CanvasConnection[]) {
@@ -48,12 +42,6 @@ function getContextResourceNodes(nodeId: string, nodes: CanvasNodeData[], connec
         .filter((connection) => connection.toNodeId === nodeId)
         .map((connection) => nodes.find((node) => node.id === connection.fromNodeId))
         .filter((node): node is CanvasNodeData => Boolean(node && isResourceNode(node)));
-}
-
-function getConnectedConfigResourceNodes(nodeId: string, nodes: CanvasNodeData[], connections: CanvasConnection[]) {
-    const configConnection = connections.find((connection) => connection.fromNodeId === nodeId && nodes.find((node) => node.id === connection.toNodeId)?.type === CanvasNodeType.Config);
-    if (!configConnection) return [];
-    return getContextResourceNodes(configConnection.toNodeId, nodes, connections).filter((node) => node.id !== nodeId);
 }
 
 function labelResourceNodes(nodes: CanvasNodeData[], active: boolean) {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, Tooltip } from "antd";
 import { ArrowUp, CheckCircle2, CircleAlert, ImagePlus, LoaderCircle, Square, UserRound, Wrench, X, XCircle } from "lucide-react";
 import { Streamdown } from "streamdown";
+import "streamdown/styles.css";
 
 import { isPlainEnterKey } from "@/lib/keyboard-event";
 import { canvasThemes } from "@/lib/canvas-theme";

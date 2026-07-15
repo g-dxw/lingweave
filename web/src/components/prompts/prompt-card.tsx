@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Button, Card, Tag } from "antd";
 
 import { formatPromptDate, type Prompt } from "@/services/api/prompts";
+import { PromptCover } from "./prompt-cover";
 
 export function PromptCard({
     item,
@@ -21,6 +22,9 @@ export function PromptCard({
     actionType?: "text" | "primary";
     extraAction?: ReactNode;
 }) {
+    const cardTags = [item.category, ...item.tags.filter((tag) => tag !== item.category)].slice(0, 3);
+    const hiddenTagCount = Math.max(0, new Set([item.category, ...item.tags]).size - cardTags.length);
+
     return (
         <Card
             hoverable
@@ -28,7 +32,7 @@ export function PromptCard({
             styles={{ body: { padding: 0 } }}
             cover={
                 <button type="button" className="block w-full text-left" onClick={onOpen}>
-                    <img src={item.coverUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" />
+                    <PromptCover src={item.coverUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" />
                 </button>
             }
         >
@@ -40,11 +44,12 @@ export function PromptCard({
                     </div>
                     <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-600 dark:text-stone-400">{item.prompt}</p>
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                        {item.tags.map((tag) => (
+                        {cardTags.map((tag) => (
                             <Tag key={tag} className="m-0 text-[11px]">
                                 {tag}
                             </Tag>
                         ))}
+                        {hiddenTagCount ? <Tag className="m-0 text-[11px]">+{hiddenTagCount}</Tag> : null}
                     </div>
                 </div>
             </button>

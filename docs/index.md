@@ -1,4 +1,4 @@
-# 无限画布文档索引
+# LingWeave 文档索引
 
 ## 项目介绍
 
@@ -18,17 +18,14 @@
 - [本地开发](/docs/development/local-development)
 - [画布数据结构](/docs/development/canvas-data-structure)
 
-## 商务合作
+## 开源与贡献
 
 - [开源协议](/docs/business/license)
 - [贡献者协议](/docs/business/cla)
-- [商务合作](/docs/business/business)
 
-## 支持与安全
+## 安全
 
 - [漏洞提交](/docs/support/security)
-- [打赏支持](/docs/support/donate)
-- [广告赞助](/docs/support/sponsor)
 
 ## 项目进度
 

@@ -1,14 +1,16 @@
 import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { CircleAlert, Cloud, KeyRound, Link2, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
+import { CircleAlert, Cloud, KeyRound, Link2, LogIn, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
+import { NIFFLER_ENABLED } from "@/constant/niffler";
 import { fetchChannelModels } from "@/services/api/image";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { createModelChannel, defaultBaseUrlForApiFormat, filterModelsByCapability, modelOptionLabel, modelOptionsFromChannels, normalizeModelOptionValue, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { createModelChannel, defaultBaseUrlForApiFormat, filterModelsByCapability, modelOptionLabel, modelOptionsFromChannels, normalizeModelOptionValue, useConfigStore, useEffectiveConfig, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { useNifflerStore } from "@/stores/use-niffler-store";
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -46,7 +48,7 @@ const webdavDomainLabels: Record<AppSyncDomainKey, string> = {
     "video-workbench": "视频创作台",
 };
 const codexSetupSteps = [
-    { title: "方式一：在 Codex 中使用插件", text: "先在 Codex App 安装 Infinite Canvas 插件，再通过插件启动画布，插件会自动启动本地 Canvas Agent 并带上连接信息。" },
+    { title: "方式一：在 Codex 中使用插件", text: "先在 Codex App 安装 LingWeave 插件，再通过插件启动画布，插件会自动启动本地 Canvas Agent 并带上连接信息。" },
     { title: "方式二：直接运行 Agent", text: "不使用 Codex 插件时，在终端运行下面命令，再回到网页里连接或手动填入 Local URL 和 Connect token。", command: "npx -y @basketikun/canvas-agent" },
 ];
 const codexPluginRemoveCommand = "codex plugin remove infinite-canvas";
@@ -70,13 +72,18 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
     const [webdavDomainProgress, setWebdavDomainProgress] = useState(createWebdavDomainProgress);
-    const config = useConfigStore((state) => state.config);
+    const config = useEffectiveConfig();
     const webdav = useConfigStore((state) => state.webdav);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const updateWebdavConfig = useConfigStore((state) => state.updateWebdavConfig);
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
+    const session = useNifflerStore((state) => state.session);
+    const runtime = useNifflerStore((state) => state.runtime);
+    const selectingKey = useNifflerStore((state) => state.selectingKey);
+    const selectApiKey = useNifflerStore((state) => state.selectApiKey);
+    const setLoginOpen = useNifflerStore((state) => state.setLoginOpen);
     const agentUrl = useAgentStore((state) => state.url);
     const agentToken = useAgentStore((state) => state.token);
     const agentConnected = useAgentStore((state) => state.connected);
@@ -96,7 +103,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     };
 
     const finishConfig = () => {
-        const ready = config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
+        const ready = Boolean(runtime) || config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
         setConfigDialogOpen(false);
         if (!ready) return;
         message.success(shouldPromptContinue ? "配置已保存，请继续刚才的请求" : "配置已保存");
@@ -238,8 +245,25 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                 items={[
                     {
                         key: "channels",
-                        label: "渠道",
-                        children: (
+                        label: runtime ? "Niffler Key" : "API 配置",
+                        children: runtime && session ? (
+                            <section className="rounded-lg border border-stone-200 p-4 dark:border-stone-800">
+                                <div className="mb-4">
+                                    <div className="text-sm font-semibold">{session.profile.username} 的模型凭证</div>
+                                    <div className="mt-1 text-xs leading-5 text-stone-500">选择本次生成使用的 Niffler API Key。完整密钥只保留在当前页面运行内存，不会写入本地配置。</div>
+                                </div>
+                                <Form layout="vertical" requiredMark={false}>
+                                    <Form.Item label="API Key" className="mb-0">
+                                        <Select
+                                            value={runtime.apiKeyId}
+                                            loading={selectingKey}
+                                            options={runtime.apiKeys.map((key) => ({ label: key.name || "未命名 Key", value: key.id }))}
+                                            onChange={(apiKeyId) => void selectApiKey(apiKeyId).catch((error) => message.error(error instanceof Error ? error.message : "切换 API Key 失败"))}
+                                        />
+                                    </Form.Item>
+                                </Form>
+                            </section>
+                        ) : (
                             <Form layout="vertical" requiredMark={false}>
                                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
                                     <div className="min-w-0 flex-1">
@@ -272,6 +296,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                                     </div>
                                                 </div>
                                                 <div className="flex shrink-0 gap-2">
+                                                    {NIFFLER_ENABLED && channel.id === "default" ? (
+                                                        <Button type="primary" size="small" icon={<LogIn className="size-3.5" />} onClick={() => setLoginOpen(true)}>
+                                                            登录 Niffler
+                                                        </Button>
+                                                    ) : null}
                                                     <Button size="small" loading={loadingChannelId === channel.id} onClick={() => void refreshChannelModels(channel)}>
                                                         拉取模型
                                                     </Button>
@@ -307,26 +336,28 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         children: (
                             <Form layout="vertical" requiredMark={false}>
                                 <div className="mb-4 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
-                                    <div className="text-sm font-semibold">默认模型和可选项</div>
-                                    <div className="mt-1 text-xs leading-5 text-stone-500">可选项决定各处下拉框展示哪些模型；同名模型会以括号里的渠道名区分。</div>
+                                    <div className="text-sm font-semibold">{runtime ? "选择默认模型" : "默认模型和可选项"}</div>
+                                    <div className="mt-1 text-xs leading-5 text-stone-500">{runtime ? "模型来自当前 Niffler 账号，可按生成类型选择默认使用的模型。" : "可选项决定各处下拉框展示哪些模型；同名模型会以括号里的渠道名区分。"}</div>
                                 </div>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {modelGroups.map((group) => (
-                                        <Form.Item key={group.modelsKey} label={group.optionsLabel} className="mb-0">
-                                            <Select
-                                                mode="tags"
-                                                showSearch
-                                                allowClear
-                                                maxTagCount="responsive"
-                                                placeholder={config.models.length ? `请选择或输入${group.optionsLabel}` : "先到渠道里填写或拉取模型"}
-                                                value={config[group.modelsKey]}
-                                                options={modelOptions}
-                                                onChange={(models) => updateCapabilityModels(group, models)}
-                                            />
-                                        </Form.Item>
-                                    ))}
-                                </div>
-                                <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                {!runtime ? (
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {modelGroups.map((group) => (
+                                            <Form.Item key={group.modelsKey} label={group.optionsLabel} className="mb-0">
+                                                <Select
+                                                    mode="tags"
+                                                    showSearch
+                                                    allowClear
+                                                    maxTagCount="responsive"
+                                                    placeholder={config.models.length ? `请选择或输入${group.optionsLabel}` : "先到 API 配置里填写或拉取模型"}
+                                                    value={config[group.modelsKey]}
+                                                    options={modelOptions}
+                                                    onChange={(models) => updateCapabilityModels(group, models)}
+                                                />
+                                            </Form.Item>
+                                        ))}
+                                    </div>
+                                ) : null}
+                                <div className={`${runtime ? "" : "mt-4 "}grid gap-4 md:grid-cols-2 xl:grid-cols-4`}>
                                     {modelGroups.map((group) => (
                                         <Form.Item key={group.modelKey} label={group.defaultLabel} className="mb-0">
                                             <ModelPicker config={config} value={config[group.modelKey]} onChange={(model) => updateConfig(group.modelKey, model)} capability={group.capability} fullWidth />
@@ -501,12 +532,13 @@ export function AppConfigModal() {
     const isConfigOpen = useConfigStore((state) => state.isConfigOpen);
     const configTab = useConfigStore((state) => state.configTab);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
+    const runtime = useNifflerStore((state) => state.runtime);
     return (
         <Modal
             title={
                 <div>
                     <div className="text-lg font-semibold">配置与用户偏好</div>
-                    <div className="mt-1 text-xs font-normal text-stone-500">渠道聚合、模型选择和同步偏好</div>
+                    <div className="mt-1 text-xs font-normal text-stone-500">{runtime ? "选择 Niffler Key、模型和生成偏好" : "配置 Base URL、API Key，拉取并选择模型"}</div>
                 </div>
             }
             open={isConfigOpen}

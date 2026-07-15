@@ -23,13 +23,21 @@ jobs:
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        working-directory: web
-        run: bun install --frozen-lockfile
+        run: |
+          cd docs && bun install --frozen-lockfile
+          cd ../web && bun install --frozen-lockfile
+
+      - name: Build docs
+        working-directory: docs
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+        run: bun run build
 
       - name: Build
         working-directory: web
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_NIFFLER_ORIGIN: ""
         run: bun run build
 
       - name: Add SPA fallback

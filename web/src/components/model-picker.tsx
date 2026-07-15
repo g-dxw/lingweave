@@ -3,6 +3,7 @@ import { Cpu } from "lucide-react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { NIFFLER_CHANNEL_ID } from "@/services/api/niffler";
 import { modelOptionLabel, modelOptionName, selectableModelsByCapability, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
 
 type ModelPickerProps = {
@@ -83,6 +84,7 @@ export function ModelPicker({ config, value, onChange, capability, className, fu
 
 function emptyModelLabel(config: AiConfig, capability?: ModelCapability) {
     const label = capability === "image" ? "生图" : capability === "video" ? "视频" : capability === "text" ? "文本" : capability === "audio" ? "音频" : "";
+    if (config.channels.some((channel) => channel.id === NIFFLER_CHANNEL_ID)) return `Niffler 暂无可用的${label}模型`;
     if (capability && config.models.length) return "请先在上方配置可选模型";
     return config.models.length ? `暂无匹配的${label}模型` : "请先到配置里添加渠道和模型";
 }
@@ -103,11 +105,7 @@ function ModelIcon({ model }: { model: string }) {
 
 function resolveModelIcon(model: string) {
     const name = model.toLowerCase();
-    if (name.includes("claude") || name.includes("anthropic")) return "/icons/claude.svg";
-    if (name.includes("gemini") || name.includes("google")) return "/icons/gemini.svg";
-    if (name.includes("gpt") || name.includes("openai")) return "/icons/openai.svg";
-    if (name.includes("grok") || name.includes("grok")) return "/icons/grok.svg";
-    if (name.includes("deepseek") || name.includes("deepseek")) return "/icons/deepseek.svg";
-    if (name.includes("glm") || name.includes("glm")) return "/icons/glm.svg";
+    const icon = name.includes("claude") || name.includes("anthropic") ? "claude" : name.includes("gemini") || name.includes("google") ? "gemini" : name.includes("gpt") || name.includes("openai") ? "openai" : name.includes("grok") ? "grok" : name.includes("deepseek") ? "deepseek" : name.includes("glm") ? "glm" : "";
+    if (icon) return `${import.meta.env.BASE_URL}icons/${icon}.svg`;
     return "";
 }

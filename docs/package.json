@@ -1,11 +1,12 @@
 {
-  "name": "docs",
-  "version": "0.0.0",
+  "name": "lingweave-docs",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "next build",
+    "postbuild": "node scripts/prepare-static-output.mjs",
     "dev": "next dev",
-    "start": "next start",
+    "start": "serve out -l 3000",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx"
   },

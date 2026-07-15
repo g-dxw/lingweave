@@ -12,6 +12,7 @@ import type { CanvasExportFile } from "@/types/canvas-export";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { useCanvasUiStore } from "@/stores/canvas/use-canvas-ui-store";
 import { exportCanvasProjects } from "@/lib/canvas/canvas-export";
+import { installDefaultCanvasExample } from "@/lib/canvas/default-canvas-example";
 
 export default function CanvasPage() {
     const { message } = App.useApp();
@@ -19,6 +20,7 @@ export default function CanvasPage() {
     const [searchParams] = useSearchParams();
     const inputRef = useRef<HTMLInputElement>(null);
     const autoOpenRef = useRef(false);
+    const exampleInstallRef = useRef(false);
     const hydrated = useCanvasStore((state) => state.hydrated);
     const projects = useCanvasStore((state) => state.projects);
     const createProject = useCanvasStore((state) => state.createProject);
@@ -32,7 +34,7 @@ export default function CanvasPage() {
     const enterProject = (id: string) => {
         navigate(`/canvas/${id}${agentQuery}`);
     };
-    const createAndEnter = () => enterProject(createProject(`无限画布 ${projects.length + 1}`));
+    const createAndEnter = () => enterProject(createProject(`画布 ${projects.length + 1}`));
     const importCanvas = async (file?: File) => {
         if (!file) return;
         try {
@@ -62,10 +64,24 @@ export default function CanvasPage() {
     useEffect(() => {
         if (!hydrated || autoOpenRef.current || (mode !== "new" && mode !== "recent")) return;
         autoOpenRef.current = true;
-        enterProject(mode === "new" ? createProject(`无限画布 ${projects.length + 1}`) : projects[0]?.id || createProject(`无限画布 ${projects.length + 1}`));
+        enterProject(mode === "new" ? createProject(`画布 ${projects.length + 1}`) : projects[0]?.id || createProject(`画布 ${projects.length + 1}`));
     }, [createProject, hydrated, mode, projects]);
 
-    if (hydrated && (mode === "new" || mode === "recent")) return <main className="flex h-full items-center justify-center bg-background text-sm text-stone-500">正在打开画布...</main>;
+    useEffect(() => {
+        if (!hydrated || exampleInstallRef.current) return;
+        exampleInstallRef.current = true;
+        void installDefaultCanvasExample(mode === "example")
+            .then((exampleId) => {
+                if (mode !== "example") return;
+                navigate(exampleId ? `/canvas/${exampleId}` : "/canvas", { replace: true });
+            })
+            .catch(() => {
+                message.error("默认案例加载失败，请刷新页面重试");
+                if (mode === "example") navigate("/canvas", { replace: true });
+            });
+    }, [hydrated, message, mode, navigate]);
+
+    if (hydrated && (mode === "new" || mode === "recent" || mode === "example")) return <main className="flex h-full items-center justify-center bg-background text-sm text-stone-500">正在打开画布...</main>;
 
     return (
         <main className="h-full overflow-auto bg-background text-stone-950 dark:text-stone-100">
@@ -73,12 +89,12 @@ export default function CanvasPage() {
                 <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-6 dark:border-stone-800">
                     <div>
                         <p className="text-xs text-stone-500">画布库</p>
-                        <h1 className="mt-3 text-3xl font-semibold">无限画布</h1>
+                        <h1 className="mt-3 text-3xl font-semibold">我的画布</h1>
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedIds.length ? (
                             <>
-                                <Button disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `无限画布-${selectedIds.length}个项目`)}>
+                                <Button disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `LingWeave-${selectedIds.length}个项目`)}>
                                     导出选中
                                 </Button>
                                 <Button disabled={!hydrated} onClick={() => setDeleteIds(selectedIds)}>

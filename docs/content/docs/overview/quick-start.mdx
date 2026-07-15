@@ -1,6 +1,6 @@
 ---
 title: 快速开始
-description: 用最少步骤把无限画布跑起来
+description: 用最少步骤把 LingWeave 跑起来
 ---
 
 # 快速开始
@@ -14,8 +14,8 @@ description: 用最少步骤把无限画布跑起来
 ## 本地启动
 
 ```bash
-git clone git@github.com:basketikun/infinite-canvas.git
-cd infinite-canvas
+git clone git@github.com:g-dxw/lingweave.git
+cd lingweave
 cd web
 bun install
 bun run dev
@@ -32,17 +32,18 @@ http://localhost:3000
 如果你需要基于当前源码构建镜像：
 
 ```bash
-docker build -t infinite-canvas .
-docker run --rm -p 3000:3000 infinite-canvas
+docker build -t lingweave .
+docker run --rm -p 3000:3000 lingweave
 ```
 
 ## 首次使用建议
 
-- 先打开右上角配置弹窗，填入自己的 `Base URL`、`API Key` 和模型名。
+- 当前环境启用了 Niffler：登录后打开右上角配置，选择账号中的 API Key，再按生成类型选择默认模型。
+- 未登录：打开右上角配置，填写自己的 `Base URL` 和 `API Key`，点击“拉取模型”，再到“模型”中选择默认模型。
 - 如果需要提示词仓库内容，打开 `/prompts` 会由浏览器前端直连拉取并缓存到 IndexedDB。
 - 如果需要跨设备同步画布、素材和生成记录，可在配置弹窗中填写 WebDAV。
 
 ## 说明
 
 - 当前画布项目和“我的素材”主要保存在浏览器本地，WebDAV 同步需要用户自行配置。
-- AI API Key 保存在浏览器本地，并由前端直接请求 OpenAI 兼容接口。
+- 未登录时，AI API Key 保存在浏览器本地；登录 Niffler 后，账号 Key 只保留在当前页面运行内存。本地开发的 Niffler 请求通过 Vite 代理，其他兼容接口由浏览器前端直接请求。

@@ -1,9 +1,11 @@
 services:
   app:
-    image: infinite-canvas:local
+    image: lingweave:local
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_NIFFLER_ORIGIN: ${VITE_NIFFLER_ORIGIN:-}
     ports:
       - "3000:3000"
     restart: unless-stopped

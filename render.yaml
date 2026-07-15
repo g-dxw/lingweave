@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: infinite-canvas
+    name: lingweave
     runtime: docker
     plan: free
     autoDeployTrigger: off

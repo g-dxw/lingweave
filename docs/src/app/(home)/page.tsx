@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowUpRight, BookOpen, Rocket } from 'lucide-react';
-import { appName, gitConfig } from '@/lib/shared';
+import { appName, basePath, gitConfig } from '@/lib/shared';
 
 const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 const demoUrl = 'https://canvas.best/';
@@ -57,7 +57,7 @@ export default function HomePage() {
               rel="noreferrer noopener"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-900 transition hover:border-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-zinc-900"
             >
-              <img src="/github.svg" alt="" className="size-4" />
+              <img src={`${basePath}/github.svg`} alt="" className="size-4" />
               GitHub
             </a>
             <a
@@ -75,7 +75,7 @@ export default function HomePage() {
         <div className="overflow-hidden rounded-2xl lg:w-[108%] lg:max-w-none">
           <img
             src={previewImages[3].src}
-            alt="无限画布效果图"
+            alt="LingWeave 无限画布效果图"
             className="aspect-[16/10] w-full rounded-xl object-cover"
           />
         </div>

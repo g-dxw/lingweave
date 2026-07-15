@@ -1,4 +1,4 @@
-import { FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
+import { BookOpen, FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
 
 export const navigationTools = [
     {
@@ -25,6 +25,11 @@ export const navigationTools = [
         slug: "assets",
         label: "我的素材",
         icon: Images,
+    },
+    {
+        slug: "guide",
+        label: "快速上手",
+        icon: BookOpen,
     },
     {
         slug: "config",

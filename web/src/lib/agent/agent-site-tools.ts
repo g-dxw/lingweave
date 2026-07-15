@@ -6,7 +6,7 @@ import { imageAspectOptions, imageQualityOptions } from "@/components/image-sett
 import { videoResolutionOptions, videoSecondOptions, videoSizeOptions } from "@/components/video-settings-panel";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { useAssetStore } from "@/stores/use-asset-store";
-import { modelOptionLabel, modelOptionName, normalizeModelOptionValue, useConfigStore } from "@/stores/use-config-store";
+import { getEffectiveConfig, modelOptionLabel, modelOptionName, normalizeModelOptionValue, useConfigStore } from "@/stores/use-config-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
 
 // 在网页端执行 Agent 的「站点级」工具（画布列表、工作台生成、提示词搜索、素材增删查等）。
@@ -83,7 +83,7 @@ function listCanvasProjects(input: SiteToolInput) {
 }
 
 function getImageConfig() {
-    const { config } = useConfigStore.getState();
+    const config = getEffectiveConfig();
     const model = config.imageModel || config.model;
     return {
         current: { model, modelName: modelOptionName(model), quality: config.quality || "auto", size: config.size || "1:1", count: config.count || "1" },
@@ -96,9 +96,10 @@ function getImageConfig() {
 
 function runImageWorkbench(input: SiteToolInput, navigate: NavigateFunction) {
     const configStore = useConfigStore.getState();
+    const config = getEffectiveConfig();
     const applied: Record<string, unknown> = {};
     if (typeof input.model === "string" && input.model.trim()) {
-        const value = normalizeModelOptionValue(input.model, configStore.config.channels) || input.model;
+        const value = normalizeModelOptionValue(input.model, config.channels) || input.model;
         configStore.updateConfig("imageModel", value);
         applied.model = value;
     }
@@ -123,7 +124,7 @@ function runImageWorkbench(input: SiteToolInput, navigate: NavigateFunction) {
 }
 
 function getVideoConfig() {
-    const { config } = useConfigStore.getState();
+    const config = getEffectiveConfig();
     const model = config.videoModel || config.model;
     return {
         current: {
@@ -144,9 +145,10 @@ function getVideoConfig() {
 
 function runVideoWorkbench(input: SiteToolInput, navigate: NavigateFunction) {
     const configStore = useConfigStore.getState();
+    const config = getEffectiveConfig();
     const applied: Record<string, unknown> = {};
     if (typeof input.model === "string" && input.model.trim()) {
-        const value = normalizeModelOptionValue(input.model, configStore.config.channels) || input.model;
+        const value = normalizeModelOptionValue(input.model, config.channels) || input.model;
         configStore.updateConfig("videoModel", value);
         applied.model = value;
     }
