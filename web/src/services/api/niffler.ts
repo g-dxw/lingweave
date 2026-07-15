@@ -162,7 +162,7 @@ function capabilityModels(models: NifflerModel[], capability: "image" | "video" 
     return unique(matched);
 }
 
-function hasCapability(model: NifflerModel, capability: "image" | "video" | "text" | "audio") {
+function hasCapability(model: NifflerModel, capability: "image" | "video" | "text" | "audio"): boolean {
     const values = Array.isArray(model.supported_capabilities)
         ? model.supported_capabilities
         : Object.entries(model.supported_capabilities || {}).filter(([, enabled]) => enabled !== false).map(([name]) => name);
