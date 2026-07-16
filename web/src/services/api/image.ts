@@ -64,7 +64,7 @@ type ResponseApiPayload = {
     code?: number;
     msg?: string;
 };
-type ResponseStreamState = { buffer: string; text: string; payload?: ResponseApiPayload; error?: string };
+type ResponseStreamState = { buffer: string; text: string; payload?: ResponseApiPayload; error?: string; toolCallsByItemId: Map<string, ResponseToolCall> };
 
 type ImageApiResponse = {
     data?: Array<Record<string, unknown>>;
@@ -91,6 +91,12 @@ type GeminiPayload = {
 };
 type GeminiStreamState = { buffer: string; text: string; toolCalls: ResponseToolCall[]; error?: string };
 type RequestOptions = { signal?: AbortSignal };
+
+export type StructuredTextTool = {
+    name: string;
+    description?: string;
+    parameters: Record<string, unknown>;
+};
 
 const QUALITY_BASE: Record<string, number> = {
     low: 1024,
@@ -401,6 +407,7 @@ function consumeResponseStreamBlock(block: string, state: ResponseStreamState, o
     const type = stringValue(event.type);
     const errorMessage = responseErrorMessage(event);
     if (errorMessage) state.error = errorMessage;
+    consumeResponseStreamToolCall(event, type, state);
     if (type === "response.output_text.delta" && typeof event.delta === "string") {
         state.text += event.delta;
         onDelta?.(state.text);
@@ -414,6 +421,26 @@ function consumeResponseStreamBlock(block: string, state: ResponseStreamState, o
     } else if (Array.isArray(event.output)) {
         state.payload = event as ResponseApiPayload;
     }
+}
+
+function consumeResponseStreamToolCall(event: Record<string, unknown>, type: string, state: ResponseStreamState) {
+    const item = isRecord(event.item) ? event.item : undefined;
+    if ((type === "response.output_item.added" || type === "response.output_item.done") && item?.type === "function_call") {
+        const itemId = stringValue(item.id) || stringValue(item.call_id);
+        if (!itemId) return;
+        state.toolCallsByItemId.set(itemId, {
+            id: stringValue(item.call_id) || stringValue(item.id),
+            type: "function",
+            function: { name: stringValue(item.name), arguments: stringValue(item.arguments) },
+        });
+        return;
+    }
+    if (type !== "response.function_call_arguments.delta" && type !== "response.function_call_arguments.done") return;
+    const itemId = stringValue(event.item_id);
+    if (!itemId) return;
+    const current = state.toolCallsByItemId.get(itemId) || { id: itemId, type: "function" as const, function: { name: "", arguments: "" } };
+    const argumentsValue = type === "response.function_call_arguments.done" ? stringValue(event.arguments) : `${current.function.arguments}${stringValue(event.delta)}`;
+    state.toolCallsByItemId.set(itemId, { ...current, function: { ...current.function, arguments: argumentsValue } });
 }
 
 function consumeResponseStreamText(state: ResponseStreamState, text: string, onDelta?: (text: string) => void, flush = false) {
@@ -447,7 +474,7 @@ async function requestStreamingResponse(config: AiConfig, body: Record<string, u
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const state: ResponseStreamState = { buffer: "", text: "" };
+    const state: ResponseStreamState = { buffer: "", text: "", toolCallsByItemId: new Map() };
     for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -456,10 +483,13 @@ async function requestStreamingResponse(config: AiConfig, body: Record<string, u
     }
     consumeResponseStreamText(state, decoder.decode(), onDelta, true);
     if (state.error) throw new Error(state.error);
-    if (!state.payload) return { content: state.text, toolCalls: [] };
+    const streamedToolCalls = [...state.toolCallsByItemId.values()].filter((item) => item.id && item.function.name);
+    if (!state.payload) return { content: state.text, toolCalls: streamedToolCalls };
     validateResponsePayload(state.payload);
     const result = parseToolResponse(state.payload);
-    return { ...result, content: state.text || result.content };
+    const toolCalls = new Map(streamedToolCalls.map((item) => [item.id, item]));
+    result.toolCalls.forEach((item) => toolCalls.set(item.id, item));
+    return { ...result, content: state.text || result.content, toolCalls: [...toolCalls.values()] };
 }
 
 function toGeminiBody(config: AiConfig, messages: ResponseInputMessage[], extra?: Record<string, unknown>) {
@@ -742,6 +772,32 @@ export async function requestImageQuestion(config: AiConfig, messages: AiTextMes
         }, onDelta, options)).content || "没有返回内容";
         if (answer === "没有返回内容") onDelta(answer);
         return answer;
+    } catch (error) {
+        throw new Error(readAxiosError(error, "请求失败"));
+    }
+}
+
+export async function requestStructuredText<T>(config: AiConfig, messages: AiTextMessage[], tool: StructuredTextTool, options?: RequestOptions): Promise<T> {
+    const requestConfig = resolveModelRequestConfig(config, config.model || config.textModel);
+    const functionTool: ResponseFunctionTool = { type: "function", function: { ...tool, strict: true } };
+    try {
+        const result =
+            requestConfig.apiFormat === "gemini"
+                ? await requestGeminiStreamingResponse(requestConfig, toGeminiBody(requestConfig, messages, toGeminiToolOptions([functionTool], { type: "function", name: tool.name })), undefined, options)
+                : await requestStreamingResponse(
+                      requestConfig,
+                      {
+                          model: requestConfig.model,
+                          input: toResponseInput(withSystemMessage(requestConfig, messages)),
+                          tools: [toResponseTool(functionTool)],
+                          tool_choice: { type: "function", name: tool.name },
+                      },
+                      undefined,
+                      options,
+                  );
+        const call = result.toolCalls.find((item) => item.function.name === tool.name);
+        if (!call) throw new Error("模型没有返回结构化结果");
+        return JSON.parse(call.function.arguments) as T;
     } catch (error) {
         throw new Error(readAxiosError(error, "请求失败"));
     }

@@ -13,6 +13,7 @@ export enum CanvasNodeType {
     Image = "image",
     Text = "text",
     Config = "config",
+    Thinking = "thinking",
     Video = "video",
     Audio = "audio",
     Group = "group",
@@ -21,6 +22,7 @@ export enum CanvasNodeType {
 export type CanvasNodeStatus = "idle" | "success" | "loading" | "error";
 export type CanvasGenerationMode = "text" | "image" | "video" | "audio";
 export type CanvasImageGenerationType = "generation" | "edit";
+export type CanvasThinkingMode = "diverge" | "sequence" | "outline";
 
 export type CanvasNodeMetadata = {
     content?: string;
@@ -31,6 +33,11 @@ export type CanvasNodeMetadata = {
     fontSize?: number;
     generationMode?: CanvasGenerationMode;
     generationType?: CanvasImageGenerationType;
+    thinkingMode?: CanvasThinkingMode;
+    thinkingCount?: number;
+    thinkingRootId?: string;
+    thinkingRunId?: string;
+    thinkingIndex?: number;
     model?: string;
     size?: string;
     quality?: string;
