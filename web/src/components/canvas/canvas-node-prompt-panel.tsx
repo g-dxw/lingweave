@@ -37,6 +37,7 @@ export function CanvasNodePromptPanel({ node, isRunning, onPromptChange, onConfi
     const hasImageContent = node.type === CanvasNodeType.Image && Boolean(node.metadata?.content);
     const isEditingExistingContent = hasTextContent || hasImageContent;
     const [prompt, setPrompt] = useState(isEditingExistingContent ? "" : node.metadata?.prompt || "");
+    const [promptFocused, setPromptFocused] = useState(false);
 
     useEffect(() => {
         setPrompt(isEditingExistingContent ? "" : node.metadata?.prompt || "");
@@ -67,9 +68,11 @@ export function CanvasNodePromptPanel({ node, isRunning, onPromptChange, onConfi
                 references={mentionReferences}
                 onChange={updatePrompt}
                 onSubmit={submit}
-                className="thin-scrollbar h-24 w-full resize-none rounded-xl border px-3 py-2 text-sm leading-5 outline-none"
-                style={{ background: theme.node.fill, borderColor: theme.node.stroke, color: theme.node.text }}
+                className="thin-scrollbar h-24 w-full resize-none rounded-xl border px-3 py-2 text-sm leading-5 outline-none transition-[border-color,box-shadow] duration-150"
+                style={{ background: theme.node.fill, borderColor: promptFocused ? theme.node.activeStroke : theme.node.stroke, boxShadow: promptFocused ? `0 0 0 3px ${theme.canvas.selectionFill}` : "none", color: theme.node.text }}
                 placeholder={promptPlaceholder(mode, hasImageContent, hasTextContent)}
+                onFocus={() => setPromptFocused(true)}
+                onBlur={() => setPromptFocused(false)}
             />
 
             <div className="mt-2 flex min-w-0 items-center justify-between gap-2">

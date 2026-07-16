@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { appName, gitConfig } from './shared';
+import { appName, basePath, gitConfig } from './shared';
 import { ArrowUpRight } from 'lucide-react';
 
 const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
@@ -10,7 +10,7 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: (
         <span className="inline-flex items-center gap-2 font-semibold">
-          <img src="/logo.svg" alt={appName} className="h-6 w-6" />
+          <img src={`${basePath}/logo.svg`} alt={appName} className="h-6 w-6" />
           <span>{appName}</span>
         </span>
       ),
@@ -39,7 +39,7 @@ export function baseOptions(): BaseLayoutProps {
         url: githubUrl,
         external: true,
         on: 'menu',
-        icon: <img src="/github.svg" alt="" className="size-4" />,
+        icon: <img src={`${basePath}/github.svg`} alt="" className="size-4" />,
       },
       {
         type: 'icon',
@@ -48,7 +48,7 @@ export function baseOptions(): BaseLayoutProps {
         url: qqUrl,
         external: true,
         on: 'menu',
-        icon: <img src="/qq.svg" alt="" className="size-4" />,
+        icon: <img src={`${basePath}/qq.svg`} alt="" className="size-4" />,
       },
     ],
   };

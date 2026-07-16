@@ -75,7 +75,7 @@ node dist/index.js
 启动后输出：
 
 ```txt
-Infinite Canvas Agent
+LingWeave Canvas Agent
 Local URL: http://127.0.0.1:17371
 Connect token: xxxxxx
 ```
@@ -141,7 +141,7 @@ codex mcp add infinite-canvas -- npx -y @basketikun/canvas-agent mcp
 本仓库调试时可使用，实际配置建议替换为本机绝对路径：
 
 ```bash
-codex mcp add infinite-canvas -- node /path/to/infinite-canvas/canvas-agent/dist/index.js mcp
+codex mcp add infinite-canvas -- node /path/to/lingweave/canvas-agent/dist/index.js mcp
 ```
 
 网页侧边栏助手另走 Canvas Agent 的对话通道。Canvas Agent 使用官方 `@openai/codex` CLI 的 `codex app-server --stdio` 启动并续用同一个 thread，启动时会注入 `infinite-canvas` MCP 配置并把 `default_tools_approval_mode` 设为 `approve`，避免 Codex 自己的 MCP 审批卡住侧边栏；真正修改画布前由网页侧边栏做二次确认。

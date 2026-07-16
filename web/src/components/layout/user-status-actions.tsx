@@ -1,14 +1,17 @@
 import type { CSSProperties } from "react";
-import { BookOpen, Keyboard, Settings2 } from "lucide-react";
+import { Dropdown } from "antd";
+import { BookOpen, CircleUserRound, Keyboard, LogOut, Settings2 } from "lucide-react";
 
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { GitHubLink } from "@/components/layout/github-link";
 import { VersionReleaseModal } from "@/components/layout/version-release-modal";
-import { DOCS_URL } from "@/constant/env";
+import { NIFFLER_ENABLED } from "@/constant/niffler";
 import { cn } from "@/lib/utils";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { useConfigStore } from "@/stores/use-config-store";
+import { useNifflerStore } from "@/stores/use-niffler-store";
 import { useThemeStore } from "@/stores/use-theme-store";
+import { useUserStore } from "@/stores/use-user-store";
 
 type UserStatusActionsProps = {
     showConfig?: boolean;
@@ -20,6 +23,10 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
     const theme = useThemeStore((state) => state.theme);
     const setTheme = useThemeStore((state) => state.setTheme);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
+    const session = useNifflerStore((state) => state.session);
+    const logout = useNifflerStore((state) => state.logout);
+    const setLoginOpen = useNifflerStore((state) => state.setLoginOpen);
+    const clearSession = useUserStore((state) => state.clearSession);
     const canvasTheme = canvasThemes[theme];
     const naturalIconClass = "inline-flex size-7 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 dark:text-stone-300 dark:hover:text-white [&_svg]:size-4";
     const iconStyle: CSSProperties | undefined = variant === "canvas" ? { color: canvasTheme.node.text } : undefined;
@@ -29,7 +36,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
 
     return (
         <div className="inline-flex shrink-0 items-center gap-1">
-            <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className={naturalIconClass} style={iconStyle} aria-label="文档" title="文档">
+            <a href={`${import.meta.env.BASE_URL}docs/overview/quick-start/`} className={naturalIconClass} style={iconStyle} aria-label="帮助文档" title="帮助文档">
                 <BookOpen className="size-4" />
             </a>
             {showConfig ? (
@@ -40,6 +47,31 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
             <AnimatedThemeToggler theme={theme} onThemeChange={setTheme} className={naturalIconClass} style={iconStyle} aria-label={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"} title={theme === "dark" ? "切换到浅色主题" : "切换到深色主题"} />
             <VersionReleaseModal style={versionStyle} />
             <GitHubLink className={cn("bg-transparent hover:bg-transparent dark:hover:bg-transparent", gitHubClassName)} style={gitHubStyle} />
+            {NIFFLER_ENABLED && session ? (
+                <Dropdown
+                    trigger={["click"]}
+                    menu={{
+                        items: [
+                            { key: "profile", label: session.profile.username, disabled: true },
+                            { type: "divider" },
+                            { key: "logout", label: "退出登录", icon: <LogOut className="size-3.5" />, danger: true },
+                        ],
+                        onClick: ({ key }) => {
+                            if (key !== "logout") return;
+                            clearSession();
+                            void logout();
+                        },
+                    }}
+                >
+                    <button type="button" className={naturalIconClass} style={iconStyle} aria-label="Niffler 账户" title={session.profile.username}>
+                        <CircleUserRound className="size-4" />
+                    </button>
+                </Dropdown>
+            ) : NIFFLER_ENABLED ? (
+                <button type="button" className={naturalIconClass} style={iconStyle} onClick={() => setLoginOpen(true)} aria-label="登录 Niffler" title="登录 Niffler">
+                    <CircleUserRound className="size-4" />
+                </button>
+            ) : null}
             {onOpenShortcuts ? (
                 <button type="button" className={naturalIconClass} style={iconStyle} onClick={onOpenShortcuts} aria-label="快捷键" title="快捷键">
                     <Keyboard className="size-4" />

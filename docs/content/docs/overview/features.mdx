@@ -57,7 +57,7 @@ description: 当前项目已实现的主要功能
 
 ## AI 生成
 
-项目默认使用前台直连：前端使用浏览器本地配置的 Base URL、API Key 和 Model 直接请求 OpenAI 兼容接口，不再通过项目服务端转发 AI 请求。
+项目默认使用前台直连：前端使用浏览器本地配置的 Base URL、API Key 和 Model 请求 OpenAI 兼容接口，不经过项目业务后端；本地开发启用 Niffler 时，由 Vite 提供同源调试代理。
 
 OpenAI 兼容图像和文本能力继续复用现有接口：
 

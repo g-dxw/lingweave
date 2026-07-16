@@ -3,6 +3,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
+import { NIFFLER_OPENAI_BASE_URL } from "@/constant/niffler";
+import { NIFFLER_CHANNEL_ID, type NifflerRuntime } from "@/services/api/niffler";
+import { useNifflerStore } from "@/stores/use-niffler-store";
+
 export type ApiCallFormat = "openai" | "gemini";
 
 export type ModelChannel = {
@@ -52,24 +56,25 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "channels" | "models" | "preferences" | "webdav";
+export type ConfigTabKey = "channels" | "models" | "preferences" | "webdav" | "codex";
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+const NIFFLER_BASE_URL = NIFFLER_OPENAI_BASE_URL;
+const LEGACY_OPENAI_BASE_URL = "https://api.openai.com";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
-    baseUrl: OPENAI_BASE_URL,
+    baseUrl: NIFFLER_BASE_URL,
     apiKey: "",
     apiFormat: "openai",
     channels: [
         {
             id: "default",
             name: "默认渠道",
-            baseUrl: OPENAI_BASE_URL,
+            baseUrl: NIFFLER_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
             models: ["gpt-image-2", "grok-imagine-video", "gpt-5.5", "gpt-4o-mini-tts"],
@@ -110,16 +115,28 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
 
 type ConfigStore = {
     config: AiConfig;
+    nifflerModels: NifflerModelSelection;
     webdav: WebdavSyncConfig;
     isConfigOpen: boolean;
     configTab: ConfigTabKey;
     shouldPromptContinue: boolean;
+    applyNifflerModels: (runtime: NifflerRuntime) => void;
     updateConfig: <K extends keyof AiConfig>(key: K, value: AiConfig[K]) => void;
     updateWebdavConfig: <K extends keyof WebdavSyncConfig>(key: K, value: WebdavSyncConfig[K]) => void;
     isAiConfigReady: (config: AiConfig, model: string) => boolean;
     openConfigDialog: (shouldPromptContinue?: boolean, tab?: ConfigTabKey) => void;
     setConfigDialogOpen: (isOpen: boolean) => void;
     clearPromptContinue: () => void;
+};
+
+type NifflerModelSelection = Pick<AiConfig, "model" | "imageModel" | "videoModel" | "textModel" | "audioModel">;
+
+const emptyNifflerModelSelection: NifflerModelSelection = {
+    model: "",
+    imageModel: "",
+    videoModel: "",
+    textModel: "",
+    audioModel: "",
 };
 
 function isVideoModelName(model: string) {
@@ -171,17 +188,34 @@ export const useConfigStore = create<ConfigStore>()(
     persist(
         (set, get) => ({
             config: defaultConfig,
+            nifflerModels: emptyNifflerModelSelection,
             webdav: defaultWebdavSyncConfig,
             isConfigOpen: false,
             configTab: "channels",
             shouldPromptContinue: false,
+            applyNifflerModels: (runtime) =>
+                set((state) => {
+                    const models = encodeNifflerModels(runtime.models);
+                    const imageModels = encodeNifflerModels(runtime.imageModels);
+                    const videoModels = encodeNifflerModels(runtime.videoModels);
+                    const textModels = encodeNifflerModels(runtime.textModels);
+                    const audioModels = encodeNifflerModels(runtime.audioModels);
+                    return {
+                        nifflerModels: {
+                            model: keepModel(state.nifflerModels.model, models),
+                            imageModel: keepModel(state.nifflerModels.imageModel, imageModels),
+                            videoModel: keepModel(state.nifflerModels.videoModel, videoModels),
+                            textModel: keepModel(state.nifflerModels.textModel, textModels),
+                            audioModel: keepModel(state.nifflerModels.audioModel, audioModels),
+                        },
+                    };
+                }),
             updateConfig: (key, value) =>
-                set((state) => ({
-                    config: {
-                        ...state.config,
-                        [key]: value,
-                    },
-                })),
+                set((state) =>
+                    useNifflerStore.getState().runtime && isNifflerModelKey(key)
+                        ? { nifflerModels: { ...state.nifflerModels, [key]: value as string } }
+                        : { config: { ...state.config, [key]: value } },
+                ),
             updateWebdavConfig: (key, value) =>
                 set((state) => ({
                     webdav: {
@@ -196,17 +230,20 @@ export const useConfigStore = create<ConfigStore>()(
         }),
         {
             name: CONFIG_STORE_KEY,
-            partialize: (state) => ({ config: state.config, webdav: state.webdav }),
+            partialize: (state) => ({ config: state.config, nifflerModels: state.nifflerModels, webdav: state.webdav }),
             merge: (persisted, current) => {
                 const persistedState = (persisted || {}) as Partial<ConfigStore>;
                 const persistedConfig = (persistedState.config || {}) as Partial<AiConfig>;
+                const persistedNifflerModels = (persistedState.nifflerModels || {}) as Partial<NifflerModelSelection>;
                 const persistedWebdav = (persistedState.webdav || {}) as Partial<WebdavSyncConfig>;
                 const config = { ...defaultConfig, ...persistedConfig };
+                if ((!persistedConfig.baseUrl || persistedConfig.baseUrl === LEGACY_OPENAI_BASE_URL) && !persistedConfig.apiKey) config.baseUrl = NIFFLER_BASE_URL;
                 if (!Array.isArray(persistedConfig.channels)) config.channels = [];
                 const channels = normalizeChannels(config);
                 const models = modelOptionsFromChannels(channels);
                 return {
                     ...current,
+                    nifflerModels: { ...emptyNifflerModelSelection, ...persistedNifflerModels },
                     webdav: { ...defaultWebdavSyncConfig, ...persistedWebdav },
                     config: {
                         ...config,
@@ -247,7 +284,14 @@ function normalizeModelList(models: string[], channels: ModelChannel[]) {
 
 export function useEffectiveConfig() {
     const config = useConfigStore((state) => state.config);
-    return useMemo(() => ({ ...config, channelMode: "local" as const }), [config]);
+    const nifflerModels = useConfigStore((state) => state.nifflerModels);
+    const runtime = useNifflerStore((state) => state.runtime);
+    return useMemo(() => buildEffectiveConfig(config, nifflerModels, runtime), [config, nifflerModels, runtime]);
+}
+
+export function getEffectiveConfig() {
+    const { config, nifflerModels } = useConfigStore.getState();
+    return buildEffectiveConfig(config, nifflerModels, useNifflerStore.getState().runtime);
 }
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
@@ -284,6 +328,7 @@ export function modelOptionLabel(config: AiConfig, value: string) {
     const decoded = decodeChannelModel(value);
     if (!decoded) return value;
     const channel = config.channels.find((item) => item.id === decoded.channelId);
+    if (channel?.id === NIFFLER_CHANNEL_ID) return decoded.model;
     return channel ? `${decoded.model}（${channel.name}）` : decoded.model;
 }
 
@@ -328,6 +373,7 @@ function normalizeChannels(config: AiConfig) {
             ...channel,
             id: channel.id || (index === 0 ? "default" : `channel-${index + 1}`),
             name: channel.name || (index === 0 ? "默认渠道" : `渠道 ${index + 1}`),
+            baseUrl: index === 0 && channel.id === "default" && channel.baseUrl === LEGACY_OPENAI_BASE_URL && !channel.apiKey ? NIFFLER_BASE_URL : channel.baseUrl,
             models: uniqueRawModels(channel.models || []),
         }),
     );
@@ -354,7 +400,7 @@ function normalizeChannels(config: AiConfig) {
 }
 
 export function defaultBaseUrlForApiFormat(apiFormat: ApiCallFormat) {
-    return apiFormat === "gemini" ? GEMINI_BASE_URL : OPENAI_BASE_URL;
+    return apiFormat === "gemini" ? GEMINI_BASE_URL : NIFFLER_BASE_URL;
 }
 
 function normalizeApiFormat(apiFormat: unknown): ApiCallFormat {
@@ -367,6 +413,47 @@ function uniqueRawModels(models: string[]) {
 
 function uniqueModelOptions(models: string[]) {
     return Array.from(new Set((models || []).map((model) => model.trim()).filter(Boolean)));
+}
+
+function encodeNifflerModels(models: string[]) {
+    return uniqueModelOptions(models.map((model) => encodeChannelModel(NIFFLER_CHANNEL_ID, model)));
+}
+
+function buildEffectiveConfig(config: AiConfig, nifflerModels: NifflerModelSelection, runtime: NifflerRuntime | null): AiConfig {
+    if (!runtime) return { ...config, channelMode: "local" };
+    const channel = createModelChannel({ id: NIFFLER_CHANNEL_ID, name: "Niffler", baseUrl: runtime.baseUrl, apiKey: runtime.apiKey, models: runtime.models });
+    const models = encodeNifflerModels(runtime.models);
+    const imageModels = encodeNifflerModels(runtime.imageModels);
+    const videoModels = encodeNifflerModels(runtime.videoModels);
+    const textModels = encodeNifflerModels(runtime.textModels);
+    const audioModels = encodeNifflerModels(runtime.audioModels);
+    return {
+        ...config,
+        channelMode: "local",
+        baseUrl: runtime.baseUrl,
+        apiKey: runtime.apiKey,
+        apiFormat: "openai",
+        channels: [channel],
+        models,
+        imageModels,
+        videoModels,
+        textModels,
+        audioModels,
+        model: keepModel(nifflerModels.model, models),
+        imageModel: keepModel(nifflerModels.imageModel, imageModels),
+        videoModel: keepModel(nifflerModels.videoModel, videoModels),
+        textModel: keepModel(nifflerModels.textModel, textModels),
+        audioModel: keepModel(nifflerModels.audioModel, audioModels),
+    };
+}
+
+function keepModel(current: string, models: string[]) {
+    const normalized = normalizeModelOptionValue(current, [createModelChannel({ id: NIFFLER_CHANNEL_ID, name: "Niffler", models: models.map(modelOptionName) })]);
+    return models.includes(normalized) ? normalized : models[0] || "";
+}
+
+function isNifflerModelKey(key: keyof AiConfig): key is keyof NifflerModelSelection {
+    return key === "model" || key === "imageModel" || key === "videoModel" || key === "textModel" || key === "audioModel";
 }
 
 export function buildApiUrl(baseUrl: string, path: string) {

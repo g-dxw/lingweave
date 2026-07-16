@@ -21,20 +21,68 @@ bun run dev
 http://localhost:3000
 ```
 
-## 2. 配置模型
-
-打开右上角配置弹窗，填写自己的 `Base URL`、`API Key` 和模型名。第三方提示词和 WebDAV 都由浏览器前端直连。
-
-## 3. 启动文档站
-
-如果需要单独调整文档站，在 `docs` 目录执行：
+开发服务器默认将 `/api` 和 `/v1` 代理到 `https://niffler.org`。需要调试其他 Niffler 环境时，新建 `web/.env.local`：
 
 ```bash
-bun run dev
+NIFFLER_PROXY_TARGET=https://your-niffler.example.com
 ```
+
+生产构建不使用这个开发代理。生产环境需要在构建时设置 `VITE_NIFFLER_ORIGIN`；留空会关闭 Niffler 登录入口和默认地址，GitHub Pages 当前采用该模式。
+
+## 2. 配置模型
+
+本地开发可登录 Niffler 并选择账号中的 API Key 和模型；未登录或生产环境没有启用 Niffler 时，在配置中填写自己的 `Base URL` 和 `API Key`。WebDAV 仍由浏览器前端直连。
+
+## 3. 同步提示词库
+
+`bun run dev` 和生产构建会先检查 `web/public/prompt-library/`。本地没有提示词库时，会优先下载当前版本 GitHub Release 中的资源包；资源包不可用时才从上游同步提示词和封面。如需主动更新：
+
+```bash
+cd web
+npm run sync:prompts
+```
+
+再次同步会复用已经下载的图片；需要重新下载全部封面时执行 `npm run sync:prompts -- --force`。`web/public/prompt-library/` 不提交到 Git，版本标签发布时由 GitHub Actions 生成 `prompt-library.tar.gz` 并上传到对应 Release。
+
+## 4. 编译并映射文档
+
+`docs/content/docs/` 是文档的唯一内容源。修改后先编译文档项目：
+
+```bash
+cd docs
+bun install
+bun run build
+```
+
+再把静态产物映射到主应用：
+
+```bash
+cd ../web
+npm run sync:docs
+```
+
+主应用会通过 `/docs/` 提供完整文档。也可以在 `web/` 直接执行 `npm run map:docs` 完成编译和映射。
+
+## 5. 运行自动化测试
+
+前端单元测试使用 Vitest，默认单次执行全部用例：
+
+```bash
+cd web
+bun run test
+```
+
+开发时持续监听文件变化：
+
+```bash
+bun run test:watch
+```
+
+GitHub Actions 会在 push 和 pull request 时自动执行单元测试与 TypeScript 检查。
 
 ## 常见场景
 
 - 改画布、页面和交互：主要看 `web/`
-- 改提示词缓存：主要看 `web/src/services/api/prompts.ts`
-- 改文档站内容：主要看 `docs/content/docs/`
+- 改测试：主要看 `web/tests/`
+- 改提示词同步和发布资源下载：主要看 `web/scripts/sync-prompts.mjs`、`web/scripts/ensure-prompts.mjs`
+- 改文档站内容：主要看 `docs/content/docs/`，完成后重新编译并映射

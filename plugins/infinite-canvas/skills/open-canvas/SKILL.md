@@ -1,58 +1,36 @@
 ---
 name: open-canvas
-description: 打开 Infinite Canvas 在线或本地画布，并自动连接本地 Canvas Agent。用户要求打开、启动、进入或使用 Infinite Canvas 画布时使用。
+description: 打开 LingWeave 网页画布并自动连接本地 Canvas Agent。用户要求打开、启动、进入、使用 LingWeave 或画布时使用。
 ---
 
-# Open Infinite Canvas
+# Open LingWeave
 
-默认打开在线版。只有用户明确要求使用本地项目时，才启动本地前端。
+当用户要求打开、启动、进入或使用 LingWeave 时，不要把 URL 交给用户手动复制，不要通过浏览器点击“新建画布”。优先快速拉起本地画布和本地 Canvas Agent，然后直接打开带 `mode`、`agentUrl`、`agentToken` 的 URL，让网页自动创建或选择画布并连接 Agent。
 
-## 在线版
+## 默认打开方式
 
-1. 启动本地 Canvas Agent 并保持运行：
+- 新建画布：`<画布网页地址>/canvas?mode=new&agentUrl=<Local URL>&agentToken=<Connect token>`
+- 最近画布：`<画布网页地址>/canvas?mode=recent&agentUrl=<Local URL>&agentToken=<Connect token>`
+- 自己选择：`<画布网页地址>/canvas?mode=choose&agentUrl=<Local URL>&agentToken=<Connect token>`
 
-```bash
-npx -y @basketikun/canvas-agent
-```
+默认打开新建本地画布；只有用户明确要求线上地址、最近画布或自己选择时，才改用对应模式。
 
-2. 从启动输出取得 `Local URL` 和 `Connect token`。
+## 工作流
 
-3. 在 Codex 右侧浏览器打开：
+1. 如果当前仓库是 LingWeave 项目，优先使用当前仓库的 `web/` 前端。
+2. 先检查本地端口归属：如果 `3000`、`3001` 等端口已被占用，必须用 `lsof`、`ps` 或服务输出确认监听进程的工作目录属于当前仓库的 `web/`，不能只因为端口存在就当成本地画布。
+3. 如果已有当前仓库的 Vite 开发服务，复用它并记录真实画布地址，例如 `http://localhost:3001`。
+4. 如果没有当前仓库的服务，在 `web/` 下运行 `bun run dev`；若默认端口被其他项目占用，使用 `bun run dev -- --port <空闲端口>`。不要执行构建或测试。
+5. 启动本地 Canvas Agent，必须带上第 3/4 步得到的真实画布地址：`CANVAS_URL=<真实画布地址> npx -y @basketikun/canvas-agent`。如果 Agent 已经在运行，则读取 `~/.infinite-canvas/canvas-agent.json` 或 `/config` 获取 `Local URL` 和 token。
+6. 读取 Agent 输出或配置中的 `Local URL` 和 `Connect token`，不要让用户手动复制。
+7. 不走本地 Agent 的 `/open` 跳转；直接构造并打开最终 URL：`<真实画布地址>/canvas?mode=new&agentUrl=<Local URL>&agentToken=<Connect token>`。
+8. 画布网页会自动新建具体画布、打开本机 Agent 面板并连接本地 Agent；不要用浏览器点击新建画布。
+9. 打开后再使用 `canvas_get_state` 检查画布是否已经连接；如果尚未连接，等待片刻再检查，不要改用线上站点，除非用户明确要求。
 
-```text
-https://canvas.best/canvas?mode=new&agentUrl=<Local URL>&agentToken=<Connect token>
-```
+## 用户只安装插件时
 
-## 本地版
+- 如果当前工作区不是 LingWeave 源码仓库，优先提示用户先打开或启动 LingWeave 网页，再连接本地 Agent。
+- 可以使用用户给出的线上或本地地址作为 `<画布网页地址>`，但仍要通过本地 Canvas Agent 获取 token 后再打开最终 URL。
+- 不要假设用户已经安装本仓库依赖；插件的 MCP 会通过 `npx -y @basketikun/canvas-agent mcp` 使用已发布的 Canvas Agent。
 
-1. 在 Infinite Canvas 项目中启动前端，并使用 Vite 输出的 `Local` 地址：
-
-```bash
-cd web
-bun install
-bun run dev
-```
-
-2. 启动本地 Canvas Agent：
-
-```bash
-npx -y @basketikun/canvas-agent
-```
-
-3. 从启动输出取得 `Local URL` 和 `Connect token`，在 Codex 右侧浏览器打开：
-
-```text
-<Vite Local 地址>/canvas?mode=new&agentUrl=<Local URL>&agentToken=<Connect token>
-```
-
-## MCP 与连接地址
-
-插件在新的 Codex 任务中加载时会自动启动 `npx -y @basketikun/canvas-agent mcp`。这个 MCP 进程负责提供画布工具，不提供网页连接服务；
-上面启动的普通 Canvas Agent 负责提供 `Local URL` 和 `Connect token`。两个进程读取同一份本地配置，因此不需要用户手动填写地址或 token。
-
-## 打开模式
-
-用户没有明确指定打开方式时，始终使用 `mode=new` 新建画布。只有用户明确要求时才替换为：
-
-- 最近画布：`mode=recent`
-- 自己选择：`mode=choose`
+不要要求用户手动填写 URL、token 或复制 JSON。

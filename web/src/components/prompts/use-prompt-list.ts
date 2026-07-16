@@ -17,7 +17,7 @@ export function usePromptList({ keyword, tags, category, enabled = true }: { key
     return {
         query,
         items: useMemo(() => query.data?.pages.flatMap((page) => page.items) || [], [query.data?.pages]),
-        tags: useMemo(() => [ALL_PROMPTS_OPTION, ...(firstPage?.tags || [])], [firstPage?.tags]),
+        tags: firstPage?.tags || [],
         categories: useMemo(() => [ALL_PROMPTS_OPTION, ...(firstPage?.categories || [])], [firstPage?.categories]),
         total: firstPage?.total || 0,
     };

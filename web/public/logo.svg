@@ -1,4 +1,10 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M32 8L58 54H46L32 29L18 54H6L32 8Z" fill="currentColor"/>
-  <path d="M32 40L40 54H24L32 40Z" fill="currentColor"/>
+  <defs>
+    <mask id="weave-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="white"/>
+      <path d="M26 35L38 15" stroke="black" stroke-width="11" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <path d="M7 19C13 9 24 9 30 19L44 43C48 50 56 49 60 41" stroke="#F97316" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" mask="url(#weave-gap)"/>
+  <path d="M4 42C8 50 16 50 21 42L35 18C41 8 52 9 59 19" stroke="#F97316" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

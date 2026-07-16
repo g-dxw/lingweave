@@ -1,10 +1,7 @@
 # docs
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
-
-It runs as a server-backed Next.js docs site and is configured for standalone
-output. Route handlers such as search and LLM text remain available at runtime.
+This is the Fumadocs source project for LingWeave documentation. It is
+statically exported and mapped into the main web application under `/docs`.
 
 Run development server:
 
@@ -12,12 +9,13 @@ Run development server:
 bun run dev
 ```
 
-Build and run local production server:
+Build static documentation:
 
 ```bash
 bun run build
-bun run start
 ```
+
+Then run `bun run sync:docs` in `web/` to map `docs/out` into the main app.
 
 Run the published image with Docker Compose:
 
