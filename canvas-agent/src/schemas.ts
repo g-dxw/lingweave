@@ -3,7 +3,7 @@ import { z } from "zod";
 const recordSchema = z.record(z.unknown());
 const positionSchema = z.object({ x: z.number(), y: z.number() });
 const viewportSchema = z.object({ x: z.number(), y: z.number(), k: z.number() });
-const nodeTypeSchema = z.enum(["image", "text", "config", "video", "audio"]);
+const nodeTypeSchema = z.enum(["image", "text", "config", "thinking", "video", "audio"]);
 const generationModeSchema = z.enum(["text", "image", "video", "audio"]);
 
 export const toolNames = [
@@ -127,16 +127,16 @@ export const toolDescriptions: Record<ToolName, string> = {
     canvas_get_selection: "读取当前网页画布选中的节点。",
     canvas_export_snapshot: "导出当前画布快照，用于理解布局。",
     canvas_apply_ops: "批量操作当前网页画布。ops 支持 add_node、update_node、delete_node、delete_connections、connect_nodes、set_viewport、select_nodes、run_generation。",
-    canvas_create_node: "创建任意类型节点：text、image、config、video、audio。适合创建占位图、媒体占位、配置节点或自定义 metadata 节点。",
+    canvas_create_node: "创建任意类型节点：text、image、config、thinking、video、audio。适合创建占位图、媒体占位、生成配置、AI 思维或自定义 metadata 节点。",
     canvas_create_text_node: "在当前画布创建单个文本节点。",
     canvas_create_text_nodes: "批量创建文本节点，适合生成标题、段落、脚本、说明等内容块。",
     canvas_create_config_node: "创建生成配置节点，可指定 text/image/video/audio 模式和生成参数，可选择立即触发生成。",
     canvas_create_image_prompt_flow: "创建提示词文本节点和图片生成配置节点，并自动连线，可选择立即触发生图。",
     canvas_create_generation_flow: "创建通用生成流程：提示词文本节点、生成配置节点、参考节点连线，可用于文案、生图、视频或音频。",
-    canvas_generate_text: "创建通用文本生成流程并立即触发生成。",
-    canvas_generate_image: "创建通用图片生成流程并立即触发生成。",
-    canvas_generate_video: "创建通用视频生成流程并立即触发生成。",
-    canvas_generate_audio: "创建通用音频生成流程并立即触发生成。",
+    canvas_generate_text: "创建通用文本生成流程并立即触发生成，完成后无需再调用 canvas_run_generation。",
+    canvas_generate_image: "创建通用图片生成流程并立即触发生成，完成后无需再调用 canvas_run_generation。",
+    canvas_generate_video: "创建通用视频生成流程并立即触发生成，完成后无需再调用 canvas_run_generation。",
+    canvas_generate_audio: "创建通用音频生成流程并立即触发生成，完成后无需再调用 canvas_run_generation。",
     canvas_update_node: "更新节点基础字段或 metadata。",
     canvas_update_node_text: "更新文本节点内容和标题。",
     canvas_move_nodes: "移动一个或多个节点，支持绝对坐标或 dx/dy 偏移。",
@@ -145,7 +145,7 @@ export const toolDescriptions: Record<ToolName, string> = {
     canvas_connect_nodes: "批量连接节点。",
     canvas_select_nodes: "设置当前选中节点。",
     canvas_set_viewport: "调整画布视口。",
-    canvas_run_generation: "触发指定节点生成，通常用于配置节点或文本/图片/视频/音频节点。",
+    canvas_run_generation: "触发已有且当前未运行的节点生成；canvas_generate_text、canvas_generate_image、canvas_generate_video、canvas_generate_audio 已自动触发，无需再次调用。",
     workbench_image_get_config: "读取生图工作台的当前参数和可选项（可用模型、质量、尺寸/宽高比、张数范围），在调用 workbench_image_generate 前先了解可选值。",
     workbench_image_generate: "在生图工作台填入提示词并按需设置 model、quality、size（如 1:1 或 1024x1024）、count，run 默认 true 会自动点击生成按钮。会自动跳转到生图工作台。生成为异步过程，工具返回代表已提交，结果请在工作台查看。",
     workbench_video_get_config: "读取视频创作台的当前参数和可选项（可用模型、尺寸/比例、时长、清晰度/分辨率、是否生成声音与水印）。",

@@ -12,6 +12,7 @@ export const NODE_DEFAULT_SIZE = {
     [CanvasNodeType.Image]: { width: 340, height: 240, title: "图片" },
     [CanvasNodeType.Text]: { width: 340, height: 240, title: "文本" },
     [CanvasNodeType.Config]: { width: 340, height: 240, title: "生成配置" },
+    [CanvasNodeType.Thinking]: { width: 360, height: 280, title: "AI 思维" },
     [CanvasNodeType.Video]: { width: 420, height: 236, title: "视频" },
     [CanvasNodeType.Audio]: { width: 340, height: 120, title: "音频" },
     [CanvasNodeType.Group]: { width: 760, height: 480, title: "组" },
@@ -29,6 +30,10 @@ export const NODE_SPECS = {
     [CanvasNodeType.Config]: {
         ...NODE_DEFAULT_SIZE[CanvasNodeType.Config],
         metadata: { content: "", status: "idle", generationMode: "image" },
+    },
+    [CanvasNodeType.Thinking]: {
+        ...NODE_DEFAULT_SIZE[CanvasNodeType.Thinking],
+        metadata: { prompt: "", status: "idle", thinkingMode: "diverge", thinkingCount: 4 },
     },
     [CanvasNodeType.Video]: {
         ...NODE_DEFAULT_SIZE[CanvasNodeType.Video],
