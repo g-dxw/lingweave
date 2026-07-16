@@ -18,6 +18,12 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
+      - name: Cache prompt library
+        uses: actions/cache@v4
+        with:
+          path: web/public/prompt-library
+          key: prompt-library-${{ runner.os }}-${{ hashFiles('VERSION', 'web/scripts/ensure-prompts.mjs', 'web/scripts/sync-prompts.mjs') }}
+
       - name: Install docs dependencies
         working-directory: docs
         run: bun install --frozen-lockfile

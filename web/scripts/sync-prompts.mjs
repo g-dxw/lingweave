@@ -9,7 +9,7 @@ const outputDir = join(webDir, "public", "prompt-library");
 const tempDir = `${outputDir}.tmp`;
 const imageDir = join(tempDir, "images");
 const force = process.argv.includes("--force");
-const concurrency = 4;
+const concurrency = positiveInteger(process.env.PROMPT_SYNC_CONCURRENCY, 12);
 
 const sources = {
     awesomeGptImage: {
@@ -85,25 +85,41 @@ const groups = await Promise.all([
 ]);
 const items = groups.flat();
 const images = new Map(items.filter((item) => item.sourceImageUrl).map((item) => [item.sourceImageUrl, imageFileName(item.sourceImageUrl)]));
+const availableImages = new Set();
+const failedImages = [];
 
 console.log(`共 ${items.length} 条提示词，开始同步 ${images.size} 张封面...`);
 let completed = 0;
 await runPool([...images], concurrency, async ([url, fileName]) => {
     const target = join(imageDir, fileName);
     const existing = join(outputDir, "images", fileName);
-    if (!force && (await exists(existing))) {
-        await copyFile(existing, target);
-    } else {
-        await downloadCover(url, target);
+    try {
+        if (!force && (await exists(existing))) {
+            await copyFile(existing, target);
+        } else {
+            await downloadCover(url, target);
+        }
+        availableImages.add(url);
+    } catch (error) {
+        failedImages.push({ url, message: error instanceof Error ? error.message : String(error) });
     }
     completed += 1;
     if (completed % 25 === 0 || completed === images.size) console.log(`已同步 ${completed}/${images.size}`);
 });
 
+if (failedImages.length) {
+    console.warn(`有 ${failedImages.length} 张封面同步失败，已使用无封面占位。`);
+    for (const { url, message } of failedImages.slice(0, 10)) console.warn(`- ${url}: ${message.split("\n").at(-1)}`);
+    if (failedImages.length > 10) console.warn(`- 其余 ${failedImages.length - 10} 张失败封面已省略`);
+}
+
 const library = {
     syncedAt: new Date().toISOString(),
     sources: Object.values(sources).map(({ category, label, githubUrl }) => ({ id: category, label, githubUrl })),
-    items: items.map(({ sourceImageUrl, ...item }) => ({ ...item, coverUrl: sourceImageUrl ? `images/${images.get(sourceImageUrl)}` : "" })),
+    items: items.map(({ sourceImageUrl, ...item }) => ({
+        ...item,
+        coverUrl: sourceImageUrl && availableImages.has(sourceImageUrl) ? `images/${images.get(sourceImageUrl)}` : "",
+    })),
 };
 await writeFile(join(tempDir, "index.json"), `${JSON.stringify(library)}\n`);
 await rm(outputDir, { recursive: true, force: true });
@@ -116,7 +132,9 @@ async function buildAwesomeGptImagePrompts(source) {
     for (const section of splitBeforeHeading(markdown, "## ")) {
         const tags = tagsFromHeading(firstMatch(section, /^##\s+(.+)$/m));
         for (const block of splitBeforeHeading(section, "### ")) {
-            const title = firstMatch(block, /^###\s+(.+)$/m).replace(/\[([^\]]+)]\([^)]+\)/g, "$1").trim();
+            const title = firstMatch(block, /^###\s+(.+)$/m)
+                .replace(/\[([^\]]+)]\([^)]+\)/g, "$1")
+                .trim();
             const prompt = firstMatch(block, /\*\*提示词:\*\*\s*\r?\n\s*```[\w-]*\r?\n(.*?)\r?\n```/s).trim();
             if (!title || !prompt) continue;
             items.push(createPrompt(source, `awesome-gpt-image-${leftPad(items.length + 1)}`, title, prompt, tags, pickCover(source.rawBase, block)));
@@ -193,25 +211,30 @@ async function fetchText(baseUrl, file) {
 }
 
 async function downloadCover(url, target) {
-    const response = await fetchWithRetry(url);
+    const response = await fetchWithRetry(url, { attempts: 1, timeoutMs: 10_000 });
     const input = Buffer.from(await response.arrayBuffer());
     const output = await sharp(input).rotate().resize(640, 480, { fit: "cover", position: "attention" }).webp({ quality: 80 }).toBuffer();
     await writeFile(target, output);
 }
 
-async function fetchWithRetry(url) {
+async function fetchWithRetry(url, { attempts = 3, timeoutMs = 60_000 } = {}) {
     let error;
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
         try {
-            const response = await fetch(url, { headers: { "user-agent": "infinite-canvas-prompt-sync" }, signal: AbortSignal.timeout(60_000) });
+            const response = await fetch(url, { headers: { "user-agent": "infinite-canvas-prompt-sync" }, signal: AbortSignal.timeout(timeoutMs) });
             if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
             return response;
         } catch (nextError) {
             error = nextError;
-            if (attempt < 3) await new Promise((resolveDelay) => setTimeout(resolveDelay, attempt * 800));
+            if (attempt < attempts) await new Promise((resolveDelay) => setTimeout(resolveDelay, attempt * 800));
         }
     }
     throw new Error(`下载失败：${url}\n${error instanceof Error ? error.message : String(error)}`);
+}
+
+function positiveInteger(value, fallback) {
+    const parsed = Number.parseInt(value || "", 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 async function runPool(values, size, task) {
@@ -276,7 +299,10 @@ function davidWuTags(item) {
 function normalizePromptTags(tags) {
     const normalized = [];
     for (const rawTag of tags) {
-        const value = rawTag.trim().toLowerCase().replace(/^(?:图像|视频)模板\s*-\s*/, "");
+        const value = rawTag
+            .trim()
+            .toLowerCase()
+            .replace(/^(?:图像|视频)模板\s*-\s*/, "");
         if (!value || value.startsWith("@") || /(?:gpt|nano.?banana|awesome|awsome)/i.test(value)) continue;
         const alias = tagAliases.get(value);
         if (!alias && /^[a-z0-9_. -]+(?:\(sora\))?$/i.test(value)) continue;
