@@ -1,0 +1,20 @@
+services:
+  app:
+    image: lingweave:${APP_IMAGE_TAG:?APP_IMAGE_TAG is required}
+    pull_policy: never
+    container_name: lingweave
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

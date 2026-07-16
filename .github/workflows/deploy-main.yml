@@ -1,0 +1,163 @@
+name: Deploy production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Cache prompt library
+        uses: actions/cache@v4
+        with:
+          path: web/public/prompt-library
+          key: prompt-library-${{ runner.os }}-${{ hashFiles('VERSION', 'web/scripts/ensure-prompts.mjs', 'web/scripts/sync-prompts.mjs') }}
+
+      - name: Install docs dependencies
+        working-directory: docs
+        run: bun install --frozen-lockfile
+
+      - name: Install web dependencies
+        working-directory: web
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests
+        working-directory: web
+        run: bun run test
+
+      - name: Check web types
+        working-directory: web
+        run: bun run typecheck
+
+      - name: Build docs
+        working-directory: docs
+        run: bun run build
+
+      - name: Build web
+        working-directory: web
+        run: bun run build
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEPLOY_DIR: /srv/apps/InfiniteCanvas
+      IMAGE_NAME: lingweave
+      VITE_NIFFLER_ORIGIN: ${{ vars.VITE_NIFFLER_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore prompt library
+        uses: actions/cache/restore@v4
+        with:
+          path: web/public/prompt-library
+          key: prompt-library-${{ runner.os }}-${{ hashFiles('VERSION', 'web/scripts/ensure-prompts.mjs', 'web/scripts/sync-prompts.mjs') }}
+
+      - name: Validate deployment configuration
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_PORT: ${{ secrets.PROD_PORT }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+          PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          PROD_SSH_KNOWN_HOSTS: ${{ secrets.PROD_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PROD_HOST PROD_PORT PROD_USER PROD_SSH_PRIVATE_KEY PROD_SSH_KNOWN_HOSTS VITE_NIFFLER_ORIGIN; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing required deployment value: $name" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$PROD_PORT" =~ ^[0-9]+$ ]]; then
+            echo "PROD_PORT must be numeric" >&2
+            exit 1
+          fi
+          case "$VITE_NIFFLER_ORIGIN" in
+            http://*|https://*) ;;
+            *)
+              echo "VITE_NIFFLER_ORIGIN must start with http:// or https://" >&2
+              exit 1
+              ;;
+          esac
+          test -s web/public/prompt-library/index.json
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          build-args: |
+            VITE_NIFFLER_ORIGIN=${{ env.VITE_NIFFLER_ORIGIN }}
+          outputs: type=docker,dest=${{ runner.temp }}/lingweave.tar
+          cache-from: type=gha,scope=production-amd64
+          cache-to: type=gha,mode=max,scope=production-amd64
+
+      - name: Compress production image
+        shell: bash
+        run: gzip -1 "${{ runner.temp }}/lingweave.tar"
+
+      - name: Configure deployment SSH
+        env:
+          PROD_SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          PROD_SSH_KNOWN_HOSTS: ${{ secrets.PROD_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$PROD_SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$PROD_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/deploy_key" "$HOME/.ssh/known_hosts"
+
+      - name: Upload and release
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_PORT: ${{ secrets.PROD_PORT }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="${PROD_USER}@${PROD_HOST}"
+          release_dir="${DEPLOY_DIR}/releases/${GITHUB_SHA}"
+          ssh_args=(
+            -i "$HOME/.ssh/deploy_key"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -p "$PROD_PORT"
+          )
+          scp_args=(
+            -i "$HOME/.ssh/deploy_key"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -P "$PROD_PORT"
+          )
+
+          ssh "${ssh_args[@]}" "$remote" "install -d -m 755 '$release_dir'"
+          scp "${scp_args[@]}" \
+            "${RUNNER_TEMP}/lingweave.tar.gz" \
+            deploy/docker-compose.production.yml \
+            deploy/release.sh \
+            "${remote}:${release_dir}/"
+          ssh "${ssh_args[@]}" "$remote" \
+            "bash '$release_dir/release.sh' '$GITHUB_SHA'"
