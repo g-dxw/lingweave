@@ -2961,8 +2961,8 @@ function CanvasTopBar({
 
     return (
         <>
-            <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-4">
-                <div className="pointer-events-auto flex min-w-0 items-center gap-3">
+            <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between gap-2 px-2 sm:px-4">
+                <div className="pointer-events-auto flex min-w-0 items-center gap-1 sm:gap-3">
                     <Dropdown
                         trigger={["click"]}
                         menu={{
@@ -2997,13 +2997,13 @@ function CanvasTopBar({
                                     if (event.key === "Enter") onFinishTitleEditing();
                                     if (event.key === "Escape") onCancelTitleEditing();
                                 }}
-                                className="max-w-[280px] bg-transparent p-0 text-left text-lg font-semibold tracking-normal outline-none"
+                                className="max-w-[96px] bg-transparent p-0 text-left text-sm font-semibold tracking-normal outline-none sm:max-w-[180px] sm:text-lg lg:max-w-[280px]"
                                 style={{ color: theme.node.text }}
                             />
                         ) : (
                             <button
                                 type="button"
-                                className="max-w-[280px] truncate border-b border-dashed border-transparent text-left text-lg font-semibold tracking-normal transition hover:border-current"
+                                className="max-w-[96px] truncate border-b border-dashed border-transparent text-left text-sm font-semibold tracking-normal transition hover:border-current sm:max-w-[180px] sm:text-lg lg:max-w-[280px]"
                                 onDoubleClick={onStartTitleEditing}
                                 title="双击修改画布名称"
                             >
@@ -3011,23 +3011,27 @@ function CanvasTopBar({
                             </button>
                         )}
                     </div>
-                    <CompactAgentStatus status={compactAgentStatus} onClick={onToggleAgent} />
+                    <div className="hidden lg:block">
+                        <CompactAgentStatus status={compactAgentStatus} onClick={onToggleAgent} />
+                    </div>
                 </div>
 
                 <div className="pointer-events-auto flex items-center gap-1.5">
-                    <UserStatusActions
-                        variant="canvas"
-                        onOpenShortcuts={() => setShortcutsOpen(true)}
-                    />
-                    <span className="h-6 w-px" style={{ background: theme.toolbar.border }} />
+                    <div className="hidden md:block">
+                        <UserStatusActions
+                            variant="canvas"
+                            onOpenShortcuts={() => setShortcutsOpen(true)}
+                        />
+                    </div>
+                    <span className="hidden h-6 w-px md:block" style={{ background: theme.toolbar.border }} />
                     <Button
                         type="text"
-                        className="!h-10 !rounded-xl !px-3 !font-medium"
+                        className="!h-9 !w-9 !min-w-9 !rounded-xl !p-0 !font-medium sm:!h-10 sm:!w-auto sm:!px-3"
                         style={{ background: agentOpen ? theme.toolbar.activeBg : theme.toolbar.panel, color: theme.node.text, boxShadow: "0 10px 30px rgba(28,25,23,.10)" }}
                         icon={<Bot className="size-4" />}
                         onClick={onToggleAgent}
                     >
-                        Agent
+                        <span className="hidden sm:inline">Agent</span>
                     </Button>
                 </div>
             </div>

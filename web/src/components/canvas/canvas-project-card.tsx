@@ -27,7 +27,7 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
     };
 
     return (
-        <article className="group flex min-h-44 cursor-pointer flex-col justify-between rounded-2xl bg-[#f1eee8] p-5 transition hover:bg-[#ebe6dc] dark:bg-white/5 dark:hover:bg-white/10" onClick={() => !editing && open()}>
+        <article className="group flex min-h-44 min-w-0 cursor-pointer flex-col justify-between rounded-2xl bg-[#f1eee8] p-5 transition hover:bg-[#ebe6dc] dark:bg-white/5 dark:hover:bg-white/10" onClick={() => !editing && open()}>
             <div className="flex items-start gap-3">
                 <input
                     type="checkbox"
@@ -42,7 +42,7 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
                 ) : (
                     <button
                         type="button"
-                        className="min-w-0 cursor-pointer text-left"
+                        className="min-w-0 flex-1 cursor-pointer overflow-hidden text-left"
                         onClick={(event) => {
                             event.stopPropagation();
                             open();
@@ -56,7 +56,7 @@ export function CanvasProjectCard({ project }: { project: CanvasProject }) {
                 )}
             </div>
             <div className="mt-8 flex items-end justify-between gap-3">
-                <p className="text-xs text-stone-500">更新于 {new Date(project.updatedAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
+                <p className="min-w-0 truncate text-xs text-stone-500">更新于 {new Date(project.updatedAt).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
                 <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
                     {editing ? (
                         <>

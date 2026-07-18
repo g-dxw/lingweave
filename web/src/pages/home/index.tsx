@@ -35,7 +35,7 @@ export default function HomePage() {
                             <span className="block h-px w-8 bg-current" />
                             AI VISUAL WORKSPACE
                         </div>
-                        <h1 className="max-w-3xl text-balance text-5xl font-semibold leading-[1.04] tracking-[-0.055em] sm:text-7xl">把一个创意，推进成一组连续内容</h1>
+                        <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-[1.08] tracking-[-0.045em] sm:text-7xl sm:leading-[1.04] sm:tracking-[-0.055em]">把一个创意，推进成一组连续内容</h1>
                         <p className="mt-7 max-w-xl text-base leading-8 text-stone-500 dark:text-stone-400">LingWeave 把提示词、参考素材、生成配置和结果连接起来。你看到的不只是最终图片，而是它如何产生、如何被继续引用。</p>
                         <div className="mt-9 flex flex-wrap gap-3">
                             <Button type="primary" size="large" icon={<ArrowRight className="size-4" />} iconPlacement="end" onClick={() => navigate("/canvas?mode=new")}>新建画布</Button>
@@ -50,23 +50,23 @@ export default function HomePage() {
                     </div>
 
                     <div className="overflow-hidden rounded-2xl border border-stone-800 bg-stone-950 bg-[linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] p-5 text-white [background-size:24px_24px] sm:p-7">
-                        <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+                        <div className="flex flex-col items-start gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div>
                                 <div className="text-sm font-semibold">案例｜电动越野摩托车全场景创作</div>
                                 <div className="mt-1 text-xs text-stone-500">结果继续作为参考，逐步扩展场景</div>
                             </div>
-                            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-stone-400">可追踪工作流</span>
+                            <span className="whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-stone-400">可追踪工作流</span>
                         </div>
                         <div className="mt-6 space-y-3">
                             {scenes.map((scene, index) => (
                                 <div key={scene.number}>
-                                    <div className="grid grid-cols-[72px_minmax(0,1fr)_112px] items-center gap-4 rounded-xl border border-white/10 bg-stone-900/95 p-3 sm:grid-cols-[88px_minmax(0,1fr)_150px]">
+                                    <div className="grid grid-cols-[minmax(0,1fr)_112px] items-center gap-3 rounded-xl border border-white/10 bg-stone-900/95 p-3 sm:grid-cols-[88px_minmax(0,1fr)_150px] sm:gap-4">
                                         <div>
                                             <div className="font-mono text-[10px] text-orange-300">SCENE {scene.number}</div>
                                             <div className="mt-2 text-xs text-stone-500">提示词</div>
                                             <ArrowRight className="mt-2 size-3.5 text-stone-600" />
                                         </div>
-                                        <div className="min-w-0 border-x border-white/10 px-4">
+                                        <div className="col-span-2 min-w-0 border-t border-white/10 pt-3 sm:col-span-1 sm:border-x sm:border-t-0 sm:px-4 sm:pt-0">
                                             <div className="text-sm font-medium">{scene.title}</div>
                                             <div className="mt-1 truncate text-xs text-stone-500">{scene.detail}</div>
                                             <div className="mt-3 flex gap-2 text-[10px] text-stone-500">
@@ -74,7 +74,7 @@ export default function HomePage() {
                                                 <span className="rounded border border-white/10 px-2 py-1">参考 {index}</span>
                                             </div>
                                         </div>
-                                        <img src={scene.image} alt={`电动越野摩托车${scene.title}`} className="aspect-[3/2] w-full rounded-lg object-cover" />
+                                        <img src={scene.image} alt={`电动越野摩托车${scene.title}`} className="col-start-2 row-start-1 aspect-[3/2] w-full rounded-lg object-cover sm:col-start-auto sm:row-start-auto" />
                                     </div>
                                     {index < scenes.length - 1 ? <ArrowDown className="mx-auto my-1 size-3.5 text-stone-600" /> : null}
                                 </div>

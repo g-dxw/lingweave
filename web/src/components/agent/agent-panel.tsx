@@ -46,21 +46,21 @@ export function AgentPanel() {
 
     return (
         <motion.div
-            className="relative z-[70] flex h-full shrink-0"
+            className="relative z-[70] flex h-full shrink-0 max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:!w-dvw"
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: panelOpen ? width + 1 : 0, opacity: panelOpen ? 1 : 0 }}
             transition={{ duration: resizing ? 0 : PANEL_MOTION_SECONDS, ease: [0.22, 1, 0.36, 1] }}
             style={{ overflow: "clip", pointerEvents: panelClosing ? "none" : undefined }}
         >
             <motion.aside
-                className="relative flex h-full shrink-0 flex-col border-l"
+                className="relative flex h-full shrink-0 flex-col border-l max-md:!w-dvw"
                 initial={{ x: 48 }}
                 animate={{ x: panelClosing ? 28 : 0 }}
                 transition={{ duration: resizing ? 0 : PANEL_MOTION_SECONDS, ease: [0.22, 1, 0.36, 1] }}
                 style={{ width, background: theme.node.panel, borderColor: theme.node.stroke, color: theme.node.text }}
             >
-                <button type="button" className="absolute inset-y-0 left-0 z-40 w-4 -translate-x-1/2 cursor-col-resize" onPointerDown={startResize} aria-label="调整右侧面板宽度" />
-                <header className="flex h-14 shrink-0 items-center justify-between border-b px-4" style={{ borderColor: theme.node.stroke }}>
+                <button type="button" className="absolute inset-y-0 left-0 z-40 w-4 -translate-x-1/2 cursor-col-resize max-md:hidden" onPointerDown={startResize} aria-label="调整右侧面板宽度" />
+                <header className="flex h-14 shrink-0 items-center justify-between border-b px-3 sm:px-4" style={{ borderColor: theme.node.stroke }}>
                     <div className="flex min-w-0 items-center gap-2">
                         <span className="grid size-8 place-items-center rounded-lg">
                             <Bot className="size-4" />
@@ -76,7 +76,7 @@ export function AgentPanel() {
                             工具确认
                         </label>
                         <Tooltip title="收起对话">
-                            <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" style={{ color: theme.node.muted }} icon={<PanelRightClose className="size-4" />} onClick={closePanel} />
+                            <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" style={{ color: theme.node.muted }} icon={<PanelRightClose className="size-4" />} onClick={closePanel} aria-label="收起对话" />
                         </Tooltip>
                     </div>
                 </header>
