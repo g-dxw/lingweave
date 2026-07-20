@@ -63,7 +63,6 @@ function createWebdavDomainProgress(): Record<AppSyncDomainKey, WebdavDomainProg
         {} as Record<AppSyncDomainKey, WebdavDomainProgress>,
     );
 }
-
 export function AppConfigPanel({ showDoneButton = false, initialTab = "channels" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const [activeTab, setActiveTab] = useState<ConfigTabKey>(initialTab);
@@ -265,9 +264,9 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                             </section>
                         ) : (
                             <Form layout="vertical" requiredMark={false}>
-                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                <div className="mb-4 flex flex-col items-stretch gap-3 rounded-lg border border-stone-200 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between dark:border-stone-800">
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex w-fit max-w-full flex-wrap items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
+                                        <div className="flex w-full max-w-full flex-wrap items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100 sm:w-fit">
                                             <CircleAlert className="size-3.5 shrink-0" />
                                             <span className="font-semibold">重要：</span>
                                             <span>新增或拉取模型后，需要到“模型”Tab 选择可选项才会显示。</span>
@@ -277,10 +276,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                         </div>
                                     </div>
                                     <div className="flex shrink-0 gap-2">
-                                        <Button icon={<RefreshCw className="size-4" />} loading={Boolean(loadingChannelId)} onClick={() => void refreshAllModels()}>
+                                        <Button className="flex-1 sm:flex-none" icon={<RefreshCw className="size-4" />} loading={Boolean(loadingChannelId)} onClick={() => void refreshAllModels()}>
                                             拉取全部
                                         </Button>
-                                        <Button type="primary" icon={<Plus className="size-4" />} onClick={addChannel}>
+                                        <Button className="flex-1 sm:flex-none" type="primary" icon={<Plus className="size-4" />} onClick={addChannel}>
                                             新增渠道
                                         </Button>
                                     </div>

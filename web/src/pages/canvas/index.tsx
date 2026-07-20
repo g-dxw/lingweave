@@ -85,32 +85,32 @@ export default function CanvasPage() {
 
     return (
         <main className="h-full overflow-auto bg-background text-stone-950 dark:text-stone-100">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10">
                 <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-6 dark:border-stone-800">
                     <div>
                         <p className="text-xs text-stone-500">画布库</p>
                         <h1 className="mt-3 text-3xl font-semibold">我的画布</h1>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                         {selectedIds.length ? (
                             <>
-                                <Button disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `LingWeave-${selectedIds.length}个项目`)}>
+                                <Button className="flex-1 sm:flex-none" disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `LingWeave-${selectedIds.length}个项目`)}>
                                     导出选中
                                 </Button>
-                                <Button disabled={!hydrated} onClick={() => setDeleteIds(selectedIds)}>
+                                <Button className="flex-1 sm:flex-none" disabled={!hydrated} onClick={() => setDeleteIds(selectedIds)}>
                                     删除选中
                                 </Button>
                             </>
                         ) : null}
                         {projects.length ? (
-                            <Button disabled={!hydrated} onClick={() => setDeleteIds(projects.map((project) => project.id))}>
+                            <Button className="flex-1 sm:flex-none" disabled={!hydrated} onClick={() => setDeleteIds(projects.map((project) => project.id))}>
                                 删除全部
                             </Button>
                         ) : null}
-                        <Button disabled={!hydrated} icon={<FileUp className="size-4" />} onClick={() => inputRef.current?.click()}>
+                        <Button className="flex-1 sm:flex-none" disabled={!hydrated} icon={<FileUp className="size-4" />} onClick={() => inputRef.current?.click()}>
                             导入画布
                         </Button>
-                        <Button disabled={!hydrated} type="primary" icon={<Plus className="size-4" />} onClick={createAndEnter}>
+                        <Button className="flex-1 sm:flex-none" disabled={!hydrated} type="primary" icon={<Plus className="size-4" />} onClick={createAndEnter}>
                             新建画布
                         </Button>
                     </div>

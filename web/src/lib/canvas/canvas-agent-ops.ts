@@ -13,6 +13,8 @@ export type CanvasAgentOp =
     | { type: "select_nodes"; ids: string[] }
     | { type: "run_generation"; nodeId: string; mode?: "text" | "image" | "video" | "audio"; prompt?: string };
 
+export type CanvasAgentGenerationOp = Extract<CanvasAgentOp, { type: "run_generation" }>;
+
 export type CanvasAgentSnapshot = {
     projectId: string;
     title: string;
@@ -31,6 +33,15 @@ export function summarizeCanvasAgentOps(ops?: CanvasAgentOp[]) {
     return Object.entries(counts)
         .map(([type, count]) => `${opLabel(type)} ${count}`)
         .join("，");
+}
+
+export function runnableCanvasAgentGenerationOps(ops: CanvasAgentOp[], activeNodeIds: Iterable<string>) {
+    const claimedNodeIds = new Set(activeNodeIds);
+    return ops.filter((op): op is CanvasAgentGenerationOp => {
+        if (op.type !== "run_generation" || !op.nodeId || claimedNodeIds.has(op.nodeId)) return false;
+        claimedNodeIds.add(op.nodeId);
+        return true;
+    });
 }
 
 export function applyCanvasAgentOps(snapshot: CanvasAgentSnapshot, ops?: CanvasAgentOp[]) {

@@ -33,6 +33,7 @@ type CanvasProject = {
   chatSessions: CanvasAssistantSession[];
   activeChatId: string | null;
   backgroundMode: "lines" | "dots" | "blank";
+  showImageInfo: boolean;
   viewport: { x: number; y: number; k: number };
 };
 ```
@@ -47,6 +48,7 @@ type CanvasProject = {
 - `chatSessions`：右侧画布助手会话。
 - `activeChatId`：当前选中的助手会话 ID。
 - `backgroundMode`：画布背景模式。
+- `showImageInfo`：是否在图片节点上显示图片信息。
 - `viewport`：视口变换，`x/y` 是屏幕平移，`k` 是缩放比例。
 
 ## 节点结构
@@ -56,7 +58,7 @@ type CanvasProject = {
 ```ts
 type CanvasNodeData = {
   id: string;
-  type: "image" | "text" | "config" | "video";
+  type: "image" | "text" | "config" | "thinking" | "video" | "audio" | "group";
   title: string;
   position: { x: number; y: number };
   width: number;
@@ -68,7 +70,7 @@ type CanvasNodeData = {
 通用字段：
 
 - `id`：节点 ID。
-- `type`：节点类型，当前有图片、文本、生成配置、视频四类。
+- `type`：节点类型，当前有图片、文本、生成配置、AI 思维、视频、音频和组七类。
 - `title`：节点标题。
 - `position`：画布世界坐标，不是屏幕坐标。
 - `width` / `height`：画布世界坐标下的节点尺寸。
@@ -79,14 +81,31 @@ type CanvasNodeData = {
 ```ts
 type CanvasNodeMetadata = {
   content?: string;
+  composerContent?: string;
   prompt?: string;
   status?: "idle" | "success" | "loading" | "error";
   errorDetails?: string;
   fontSize?: number;
-  generationMode?: "text" | "image" | "video";
+  generationMode?: "text" | "image" | "video" | "audio";
+  generationType?: "generation" | "edit";
+  thinkingMode?: "diverge" | "sequence" | "outline";
+  thinkingCount?: number;
+  thinkingRootId?: string;
+  thinkingRunId?: string;
+  thinkingIndex?: number;
   model?: string;
   size?: string;
+  quality?: string;
   count?: number;
+  seconds?: string;
+  vquality?: string;
+  generateAudio?: string;
+  watermark?: string;
+  audioVoice?: string;
+  audioFormat?: string;
+  audioSpeed?: string;
+  audioInstructions?: string;
+  references?: string[];
   naturalWidth?: number;
   naturalHeight?: number;
   freeResize?: boolean;
@@ -95,10 +114,11 @@ type CanvasNodeMetadata = {
   batchChildIds?: string[];
   primaryImageId?: string;
   imageBatchExpanded?: boolean;
-  inputOrder?: string[];
   storageKey?: string;
   mimeType?: string;
   bytes?: number;
+  durationMs?: number;
+  groupId?: string;
 };
 ```
 
@@ -106,8 +126,11 @@ type CanvasNodeMetadata = {
 
 - 图片节点：`content` 是当前可展示的图片 URL，通常是 `blob:` URL；`storageKey` 指向本地图片 Blob；`naturalWidth/naturalHeight/bytes/mimeType` 保存原图信息。
 - 视频节点：`content` 是当前可播放的视频 URL，通常是 `blob:` URL；`storageKey` 指向本地视频 Blob；`bytes/mimeType` 保存文件信息。
+- 音频节点：`content` 是当前可播放的音频 URL；`storageKey` 指向本地音频 Blob；`durationMs/bytes/mimeType` 保存媒体信息。
 - 文本节点：`content` 保存文本内容；`fontSize` 保存字体大小；`prompt/status/errorDetails` 保存生成状态。
-- 生成配置节点：`generationMode/model/size/count/inputOrder` 保存生成配置；`generationMode` 可选择文本、图片或视频；上游输入通过 `connections` 计算。
+- 生成配置节点：`composerContent/generationMode/model/size/count` 保存提示词组装和生成配置；`generationMode` 可选择文本、图片、视频或音频；上游输入通过 `connections` 计算。
+- AI 思维节点：`thinkingMode/thinkingCount` 保存结构和数量；生成的文本节点通过 `thinkingRootId/thinkingRunId/thinkingIndex` 记录所属思维节点、运行批次和顺序。
+- 组节点：自身不保存媒体内容；组内普通节点通过 `groupId` 记录归属。
 - 图片组节点：根节点用 `isBatchRoot/batchChildIds/primaryImageId/imageBatchExpanded` 记录批量生成结果；子图节点用 `batchRootId` 指回根节点。
 
 ## 连线结构
@@ -123,6 +146,8 @@ type CanvasConnection = {
 ```
 
 连线只保存节点 ID，不保存端口坐标。渲染时根据节点位置和尺寸计算路径。
+
+AI 思维节点的发散和总分结构由思维节点连接所有文本子节点；序列结构由思维节点连接第一个文本节点，后续文本节点依次链式连接。连线既表达画布关系，也决定生成配置和 AI 思维节点读取哪些上游素材。
 
 删除节点时会同步删除以该节点为起点或终点的连线。删除图片组根节点时，会把对应子节点一起删除。
 
